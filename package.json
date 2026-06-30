@@ -1,0 +1,37 @@
+{
+  "name": "progress-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3005",
+    "build": "next build",
+    "start": "next start -p 3005",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "next": "16.2.9",
+    "next-auth": "^4.24.14",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sweetalert2": "^11.26.25"
+  },
+  "devDependencies": {
+    "@prisma/client": "^5.22.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.2.9",
+    "prisma": "^5.22.0",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.0.0"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  }
+}
