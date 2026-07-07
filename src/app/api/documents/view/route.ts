@@ -1,38 +1,111 @@
-// app/api/documents/view/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getServerSession } from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+import { prisma } from "@/lib/prisma";
+import { safeFileNameFrom } from "@/lib/docDebug";
+
+const DOCUMENTS_ROOT = path.join(process.cwd(), "private_uploads", "employee_documents");
+
+const DOCUMENT_TYPES = {
+  passport: { fileBase: "passport", dbField: "passport_file" },
+  pp: { fileBase: "passport", dbField: "passport_file" },
+  visa: { fileBase: "visa", dbField: "visa_file" },
+  vs: { fileBase: "visa", dbField: "visa_file" },
+  work_permit: { fileBase: "work_permit", dbField: "work_permit_file" },
+  workpermit: { fileBase: "work_permit", dbField: "work_permit_file" },
+  ninety_day: { fileBase: "ninety_day", dbField: "ninety_day_file" },
+  "90d": { fileBase: "ninety_day", dbField: "ninety_day_file" },
+} as const;
+
+function contentTypeFor(fileName: string) {
+  const ext = path.extname(fileName).toLowerCase();
+  if (ext === ".pdf") return "application/pdf";
+  if (ext === ".png") return "image/png";
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  if (ext === ".webp") return "image/webp";
+  return "application/octet-stream";
+}
+
+async function currentUser(session: any) {
+  const username = session?.user?.username || session?.user?.name || "";
+  const email = session?.user?.email || "";
+
+  return prisma.users.findFirst({
+    where: {
+      OR: [{ username }, { email }, { full_name: session?.user?.name || "" }],
+    },
+    include: { roles: true },
+  });
+}
+
+async function findEmployee(employeeId: string) {
+  const id = Number(employeeId);
+  const byId = Number.isInteger(id)
+    ? await prisma.employee_document_profiles.findUnique({ where: { id } })
+    : null;
+
+  return byId || prisma.employee_document_profiles.findFirst({
+    where: { employee_id: employeeId },
+  });
+}
 
 export async function GET(request: NextRequest) {
-  // 1. รับค่าประเภทเอกสาร และ รหัสพนักงาน จาก Query String
+  const session = await getServerSession();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const searchParams = request.nextUrl.searchParams;
-  const docType = searchParams.get('type'); // เช่น VS, PP, 90D
-  const empId = searchParams.get('empId');   // เช่น 66001
+  const employeeId = searchParams.get("employeeId") || searchParams.get("profile_id") || searchParams.get("id");
+  const rawType = searchParams.get("documentType") || searchParams.get("type");
+  const documentType = String(rawType || "").trim().toLowerCase();
+  const documentConfig = DOCUMENT_TYPES[documentType as keyof typeof DOCUMENT_TYPES];
 
-  if (!docType || !empId) {
-    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+  if (!employeeId || !documentConfig) {
+    return NextResponse.json({ error: "Missing or invalid parameters" }, { status: 400 });
   }
 
-  // TODO: แทรกโค้ดเช็คสิทธิ์ (Authentication) ตรงนี้ ว่า User คนนี้มีสิทธิ์ดูไฟล์หรือไม่
-  // ...
+  const employee = await findEmployee(employeeId);
 
-  // 2. สร้าง Path ไปยังไฟล์ที่เก็บไว้
-  // โครงสร้าง: private_uploads / ประเภทเอกสาร / รหัสพนักงาน.pdf
-  const filePath = path.join(process.cwd(), 'private_uploads', docType, `${empId}.pdf`);
+  if (!employee) {
+    return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+  }
 
-  // 3. ตรวจสอบว่ามีไฟล์อยู่จริงไหม
+  const user = await currentUser(session);
+  const role = String(user?.roles?.name || (session.user as any)?.role || "").toUpperCase();
+  const isStaff = ["ADMIN", "STAFF", "SUPERADMIN"].includes(role);
+  const sameCompany = user?.company_id && Number(user.company_id) === Number(employee.company_id);
+
+  if (!isStaff && !sameCompany) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const employeeFolder = safeFileNameFrom(employee.emp_code || `employee-${employee.id}`);
+  const storedPath = employee[documentConfig.dbField as keyof typeof employee] as string | null;
+  const storedFileName = storedPath ? path.basename(storedPath) : "";
+  const ext = path.extname(storedFileName);
+
+  if (!ext || path.parse(storedFileName).name !== documentConfig.fileBase) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  }
+
+  const filePath = path.join(DOCUMENTS_ROOT, employeeFolder, `${documentConfig.fileBase}${ext}`);
+
   if (!fs.existsSync(filePath)) {
-    return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 
-  // 4. อ่านไฟล์และส่งกลับไปเป็น Buffer
   const fileBuffer = fs.readFileSync(filePath);
 
   return new NextResponse(fileBuffer, {
     headers: {
-      'Content-Type': 'application/pdf',
-      // ป้องกันการ Cache เพื่อความปลอดภัย
-      'Cache-Control': 'no-store, max-age=0', 
+      "Content-Type": contentTypeFor(filePath),
+      "Content-Disposition": `inline; filename="${documentConfig.fileBase}${ext}"`,
+      "Cache-Control": "no-store, no-cache, must-revalidate, private, max-age=0",
+      Pragma: "no-cache",
+      Expires: "0",
+      Vary: "Cookie",
     },
   });
 }

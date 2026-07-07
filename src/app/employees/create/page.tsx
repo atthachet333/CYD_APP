@@ -3,12 +3,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import ApiActionForm from "./ApiActionForm";
+import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 function documentHref(documentFileName: string) {
-  if (/^https?:\/\//i.test(documentFileName) || documentFileName.startsWith("/")) {
-    return documentFileName;
-  }
-
   return `/api/documents/${encodeURIComponent(documentFileName)}`;
 }
 
@@ -353,22 +350,22 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                 
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
                   <label className="block text-sm font-bold text-gray-700 mb-2">หนังสือเดินทาง (Passport - PP)</label>
-                  <input type="file" name="passport_file" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                  <input type="file" name="passport_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
                 </div>
 
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
                   <label className="block text-sm font-bold text-gray-700 mb-2">วีซ่า (Visa - VS)</label>
-                  <input type="file" name="visa_file" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                  <input type="file" name="visa_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
                 </div>
 
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
                   <label className="block text-sm font-bold text-gray-700 mb-2">ใบอนุญาตทำงาน (Work Permit)</label>
-                  <input type="file" name="work_permit_file" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                  <input type="file" name="work_permit_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
                 </div>
 
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
                   <label className="block text-sm font-bold text-gray-700 mb-2">รายงานตัว 90 วัน (90D)</label>
-                  <input type="file" name="ninety_day_file" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                  <input type="file" name="ninety_day_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
                 </div>
 
               </div>
@@ -494,7 +491,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                                   )}
                                   <Link href={`?moveId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white transition-all shadow-sm">ย้ายบริษัท</Link>
                                   <Link href={`?deleteId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-red-600 border-red-200 hover:bg-red-600 hover:text-white transition-all shadow-sm">ลบ</Link>
-                                  <Link href={`/employee/edit/${emp.id}`} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm">แก้ไขข้อมูล</Link>
+                                  <Link href={`/employees/edit/${emp.id}`} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm">แก้ไขข้อมูล</Link>
                                 </div>
                               </td>
                             </tr>
@@ -565,6 +562,15 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
             </div>
             
             <div className="p-6">
+              {activeDocEmp.document_file_name && (
+                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors">
+                  <div>
+                    <p className="font-bold text-gray-800">Main Document</p>
+                    <p className="text-xs text-gray-500 mt-1">{activeDocEmp.document_file_name}</p>
+                  </div>
+                  <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* 1. Passport */}
@@ -573,11 +579,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                     <p className="font-bold text-gray-800">Passport (PP)</p>
                     <p className="text-xs text-gray-500 mt-1">หนังสือเดินทาง</p>
                   </div>
-                  {activeDocEmp.document_file_name ? (
-                    <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
-                  ) : (
-                    <button disabled className="px-4 py-2 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed">ไม่มีไฟล์</button>
-                  )}
+                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="passport" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
                 {/* 2. Visa */}
@@ -586,11 +588,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                     <p className="font-bold text-gray-800">Visa (VS)</p>
                     <p className="text-xs text-gray-500 mt-1">วีซ่า</p>
                   </div>
-                  {activeDocEmp.document_file_name ? (
-                    <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
-                  ) : (
-                    <button disabled className="px-4 py-2 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed">ไม่มีไฟล์</button>
-                  )}
+                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="visa" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
                 {/* 3. Work Permit */}
@@ -599,11 +597,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                     <p className="font-bold text-gray-800">Work Permit</p>
                     <p className="text-xs text-gray-500 mt-1">ใบอนุญาตทำงาน</p>
                   </div>
-                  {activeDocEmp.document_file_name ? (
-                    <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
-                  ) : (
-                    <button disabled className="px-4 py-2 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed">ไม่มีไฟล์</button>
-                  )}
+                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="work_permit" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
                 {/* 4. 90 Days */}
@@ -612,11 +606,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                     <p className="font-bold text-gray-800">90 Days (90D)</p>
                     <p className="text-xs text-gray-500 mt-1">รายงานตัว 90 วัน</p>
                   </div>
-                  {activeDocEmp.document_file_name ? (
-                    <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
-                  ) : (
-                    <button disabled className="px-4 py-2 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl cursor-not-allowed">ไม่มีไฟล์</button>
-                  )}
+                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="ninety_day" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
               </div>

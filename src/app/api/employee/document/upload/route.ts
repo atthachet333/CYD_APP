@@ -1,5 +1,5 @@
 import fs from "fs";
-import { writeFile } from "fs/promises";
+import { mkdir, readdir, rename, rm, writeFile } from "fs/promises";
 import path from "path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -14,6 +14,66 @@ import {
 
 export const runtime = "nodejs";
 
+const DOCUMENTS_ROOT = path.join(process.cwd(), "private_uploads", "employee_documents");
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const DOCUMENT_TYPES = {
+  passport: { fileBase: "passport", dbField: "passport_file" },
+  pp: { fileBase: "passport", dbField: "passport_file" },
+  visa: { fileBase: "visa", dbField: "visa_file" },
+  vs: { fileBase: "visa", dbField: "visa_file" },
+  work_permit: { fileBase: "work_permit", dbField: "work_permit_file" },
+  workpermit: { fileBase: "work_permit", dbField: "work_permit_file" },
+  ninety_day: { fileBase: "ninety_day", dbField: "ninety_day_file" },
+  "90d": { fileBase: "ninety_day", dbField: "ninety_day_file" },
+} as const;
+
+function normalizeDocumentType(value: FormDataEntryValue | null) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function fileExt(fileName: string) {
+  const ext = path.extname(fileName).toLowerCase();
+  return [".pdf", ".png", ".jpg", ".jpeg", ".webp"].includes(ext) ? ext : null;
+}
+
+function validateFile(file: File) {
+  const ext = fileExt(file.name);
+  if (!ext) return { error: "Unsupported file type" };
+  if (!ALLOWED_MIME_TYPES.has(file.type)) return { error: "Unsupported MIME type" };
+  if (file.size > MAX_FILE_SIZE) return { error: "File is larger than 10MB" };
+  return { ext };
+}
+
+async function currentUser(session: any) {
+  const username = session?.user?.username || session?.user?.name || "";
+  const email = session?.user?.email || "";
+
+  return prisma.users.findFirst({
+    where: {
+      OR: [{ username }, { email }, { full_name: session?.user?.name || "" }],
+    },
+    include: { roles: true },
+  });
+}
+
+async function findEmployee(employeeId: FormDataEntryValue) {
+  const id = Number(employeeId);
+  const byId = Number.isInteger(id)
+    ? await prisma.employee_document_profiles.findUnique({ where: { id } })
+    : null;
+
+  return byId || prisma.employee_document_profiles.findFirst({
+    where: { employee_id: String(employeeId) },
+  });
+}
+
 export async function POST(request: Request) {
   const requestId = createRequestId();
   const startedAt = Date.now();
@@ -22,11 +82,18 @@ export async function POST(request: Request) {
 
   try {
     const session = await getServerSession();
-    logDoc(requestId, "session", { exists: !!session });
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { ok: false, error: "Unauthorized", requestId },
+        { status: 401 },
+      );
+    }
 
     const formData = await request.formData();
-    const employeeId = formData.get("employee_id") || formData.get("profile_id") || formData.get("id");
-    const documentType = formData.get("document_type") || formData.get("type") || "main_document";
+    const employeeId = formData.get("employeeId") || formData.get("employee_id") || formData.get("profile_id") || formData.get("id");
+    const documentType = normalizeDocumentType(formData.get("documentType") || formData.get("document_type") || formData.get("type"));
+    const documentConfig = DOCUMENT_TYPES[documentType as keyof typeof DOCUMENT_TYPES];
     const file = (formData.get("file") || formData.get("main_document")) as File | null;
 
     logDoc(requestId, "form data", {
@@ -40,99 +107,87 @@ export async function POST(request: Request) {
     });
 
     if (!employeeId) {
-      logDoc(requestId, "DOC_UPLOAD END", {
-        status: 400,
-        reason: "missing employee_id/profile_id",
-        durationMs: Date.now() - startedAt,
-      });
       return NextResponse.json(
         { ok: false, error: "Missing employee_id or profile_id", requestId },
         { status: 400 },
       );
     }
 
+    if (!documentConfig) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid document type", requestId },
+        { status: 400 },
+      );
+    }
+
     if (!file || file.size === 0) {
-      logDoc(requestId, "DOC_UPLOAD END", {
-        status: 400,
-        reason: "missing file",
-        durationMs: Date.now() - startedAt,
-      });
       return NextResponse.json(
         { ok: false, error: "Missing file", requestId },
         { status: 400 },
       );
     }
 
-    const before = await prisma.employee_document_profiles.findUnique({
-      where: { id: Number(employeeId) },
-    });
+    const validation = validateFile(file);
+    if (validation.error) {
+      return NextResponse.json(
+        { ok: false, error: validation.error, requestId },
+        { status: 400 },
+      );
+    }
 
-    logDoc(requestId, "employee before update", {
-      employeeId: before?.id || null,
-      document_file_name: before?.document_file_name || null,
-    });
+    const employee = await findEmployee(employeeId);
 
-    if (!before) {
-      logDoc(requestId, "DOC_UPLOAD END", {
-        status: 404,
-        reason: "employee not found",
-        durationMs: Date.now() - startedAt,
-      });
+    if (!employee) {
       return NextResponse.json(
         { ok: false, error: "Employee not found", requestId },
         { status: 404 },
       );
     }
 
-    const uploadDir = path.join(process.cwd(), "private_uploads");
-    logDoc(requestId, "uploadDir", {
-      cwd: process.cwd(),
-      uploadDir,
-      exists: fs.existsSync(uploadDir),
-    });
+    const user = await currentUser(session);
+    const role = String(user?.roles?.name || (session.user as any)?.role || "").toUpperCase();
+    const isStaff = ["ADMIN", "STAFF", "SUPERADMIN"].includes(role);
+    const sameCompany = user?.company_id && Number(user.company_id) === Number(employee.company_id);
 
-    if (!fs.existsSync(uploadDir)) {
-      logDoc(requestId, "creating uploadDir", { uploadDir });
-      fs.mkdirSync(uploadDir, { recursive: true });
+    if (!isStaff && !sameCompany) {
+      return NextResponse.json(
+        { ok: false, error: "Forbidden", requestId },
+        { status: 403 },
+      );
     }
 
-    const originalFileName = file.name;
-    const safeFileName = safeFileNameFrom(path.basename(originalFileName));
-    const filePath = path.join(uploadDir, safeFileName);
+    const employeeFolder = safeFileNameFrom(employee.emp_code || `employee-${employee.id}`);
+    const uploadDir = path.join(DOCUMENTS_ROOT, employeeFolder);
+    const finalFileName = `${documentConfig.fileBase}${validation.ext}`;
+    const relativePath = `employee_documents/${employeeFolder}/${finalFileName}`;
+    const filePath = path.join(uploadDir, finalFileName);
+    const tempPath = path.join(uploadDir, `.${finalFileName}.${requestId}.tmp`);
 
-    logDoc(requestId, "file save before", {
-      originalFileName,
-      safeFileName,
-      filePath,
-      existsBefore: fs.existsSync(filePath),
-    });
+    if (!fs.existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
+    await writeFile(tempPath, buffer);
 
-    logDoc(requestId, "file save after", {
-      filePath,
-      existsAfter: fs.existsSync(filePath),
-      savedFileSize: fs.statSync(filePath).size,
-    });
-
-    const updateData = { document_file_name: safeFileName };
-    logDoc(requestId, "DB update data", {
-      field: "document_file_name",
-      updateData,
-    });
+    const existingFiles = await readdir(uploadDir);
+    await Promise.all(
+      existingFiles
+        .filter((name) => name.startsWith(`${documentConfig.fileBase}.`))
+        .map((name) => rm(path.join(uploadDir, name), { force: true })),
+    );
+    await rename(tempPath, filePath);
 
     const updated = await prisma.employee_document_profiles.update({
-      where: { id: Number(employeeId) },
-      data: updateData,
+      where: { id: employee.id },
+      data: { [documentConfig.dbField]: relativePath },
     });
 
-    logDoc(requestId, "DB update result", {
-      employeeId: updated.id,
-      document_file_name: updated.document_file_name,
-    });
     logDoc(requestId, "DOC_UPLOAD END", {
       status: 200,
+      employeeId: updated.id,
+      documentType,
+      file: relativePath,
       durationMs: Date.now() - startedAt,
     });
 
@@ -140,8 +195,7 @@ export async function POST(request: Request) {
       ok: true,
       requestId,
       employeeId: updated.id,
-      document_file_name: updated.document_file_name,
-      path: `/api/documents/${encodeURIComponent(updated.document_file_name || "")}`,
+      document_type: documentConfig.fileBase,
     });
   } catch (error: any) {
     logDocError(requestId, "DOC_UPLOAD ERROR", error);

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import SpxRegistrationSection from "./SpxRegistrationSection";
 import Link from "next/link";
+import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 interface PageProps {
   searchParams: Promise<{ deleteId?: string; viewDocId?: string; editId?: string }>;
@@ -240,34 +241,17 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   </td>
                   <td className="p-4 flex justify-center items-center space-x-2">
                     {/* 🟢 ปุ่ม "ดูเอกสาร" สไตล์ตามภาพเรฟเฟอเรนซ์ */}
-                    {isSPX ? (
-                      // หากเป็น SPX ให้เปิด Modal แทน
-                      <Link
-                        href={`?viewDocId=${emp.id}`}
-                        scroll={false}
-                        className="flex items-center space-x-1.5 border border-purple-200 text-purple-700 bg-white hover:bg-purple-50 px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all shadow-sm"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <span>ดูเอกสาร</span>
-                      </Link>
-                    ) : (
-                      // หากไม่ใช่ SPX เปิดหน้าต่าง PDF ตรงๆ เหมือนเดิม
-                      <a
-                        href={emp.document_file_name || emp.emp_code ? documentHref(emp.document_file_name || `${emp.emp_code}.pdf`) : "#"}
-                        target={emp.document_file_name || emp.emp_code ? "_blank" : "_self"}
-                        rel="noopener noreferrer"
-                        className={`flex items-center space-x-1.5 border ${emp.document_file_name || emp.emp_code ? "border-purple-200 text-purple-700 bg-white hover:bg-purple-50" : "border-gray-200 text-gray-400 bg-gray-50"} px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all shadow-sm`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <span>{emp.document_file_name || emp.emp_code ? "ดูเอกสาร" : "ไม่มีเอกสาร"}</span>
-                      </a>
-                    )}
+                    <Link
+                      href={`?viewDocId=${emp.id}`}
+                      scroll={false}
+                      className="flex items-center space-x-1.5 border border-purple-200 text-purple-700 bg-white hover:bg-purple-50 px-4 py-1.5 rounded-xl text-[12px] font-bold transition-all shadow-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span>ดูเอกสาร</span>
+                    </Link>
 
                     {/* 🟢 ปุ่ม "แก้ไขข้อมูล" */}
                     <Link
@@ -333,9 +317,9 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   <p className="font-extrabold text-gray-900 text-sm">Passport (PP)</p>
                   <p className="text-xs text-gray-500 mt-1 font-medium">หนังสือเดินทาง</p>
                 </div>
-                <button className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
+                <SecureDocumentButton employeeId={activeViewEmp.id} documentType="passport" className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
                   เปิดดูไฟล์
-                </button>
+                </SecureDocumentButton>
               </div>
 
               {/* ช่อง 2: Visa */}
@@ -344,9 +328,9 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   <p className="font-extrabold text-gray-900 text-sm">Visa (VS)</p>
                   <p className="text-xs text-gray-500 mt-1 font-medium">วีซ่า</p>
                 </div>
-                <button className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
+                <SecureDocumentButton employeeId={activeViewEmp.id} documentType="visa" className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
                   เปิดดูไฟล์
-                </button>
+                </SecureDocumentButton>
               </div>
 
               {/* ช่อง 3: Work Permit */}
@@ -355,9 +339,9 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   <p className="font-extrabold text-gray-900 text-sm">Work Permit</p>
                   <p className="text-xs text-gray-500 mt-1 font-medium">ใบอนุญาตทำงาน</p>
                 </div>
-                <button className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
+                <SecureDocumentButton employeeId={activeViewEmp.id} documentType="work_permit" className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
                   เปิดดูไฟล์
-                </button>
+                </SecureDocumentButton>
               </div>
 
               {/* ช่อง 4: 90 Days */}
@@ -366,12 +350,26 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   <p className="font-extrabold text-gray-900 text-sm">90 Days (90D)</p>
                   <p className="text-xs text-gray-500 mt-1 font-medium">รายงานตัว 90 วัน</p>
                 </div>
-                <button className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
+                <SecureDocumentButton employeeId={activeViewEmp.id} documentType="ninety_day" className="bg-[#eff6ff] text-[#2563eb] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-blue-100 transition-colors">
                   เปิดดูไฟล์
-                </button>
+                </SecureDocumentButton>
               </div>
 
             </div>
+
+            {activeViewEmp.document_file_name && (
+              <div className="px-6 pb-6">
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 flex justify-between items-center shadow-sm">
+                  <div>
+                    <p className="font-extrabold text-gray-900 text-sm">Main Document เดิม</p>
+                    <p className="text-xs text-gray-500 mt-1 font-medium">{activeViewEmp.document_file_name}</p>
+                  </div>
+                  <a href={documentHref(activeViewEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="bg-[#f5f3ff] text-[#6b21a8] px-5 py-2.5 rounded-xl text-[13px] font-extrabold hover:bg-purple-100 transition-colors">
+                    เปิดดูไฟล์
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Footer ของ Modal */}
             <div className="p-5 border-t border-gray-200 bg-white flex justify-end">

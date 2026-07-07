@@ -1,5 +1,5 @@
 import fs from "fs";
-import { writeFile } from "fs/promises";
+import { mkdir, readdir, rename, rm, writeFile } from "fs/promises";
 import path from "path";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -12,6 +12,25 @@ import {
 } from "@/lib/docDebug";
 
 export const runtime = "nodejs";
+
+const EMPLOYEE_DOCUMENTS_ROOT = path.join(
+  process.cwd(),
+  "private_uploads",
+  "employee_documents"
+);
+const MAX_EMPLOYEE_DOCUMENT_SIZE = 10 * 1024 * 1024;
+const ALLOWED_EMPLOYEE_DOCUMENT_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+const EMPLOYEE_DOCUMENT_FIELDS = [
+  { field: "passport_document", legacyField: "passport_file", type: "passport", dbField: "passport_file" },
+  { field: "visa_document", legacyField: "visa_file", type: "visa", dbField: "visa_file" },
+  { field: "work_permit_document", legacyField: "work_permit_file", type: "work_permit", dbField: "work_permit_file" },
+  { field: "ninety_day_document", legacyField: "ninety_day_file", type: "ninety_day", dbField: "ninety_day_file" },
+] as const;
 
 function formValue(formData: FormData, key: string) {
   return formData.get(key) as string | null;
@@ -36,6 +55,72 @@ function padNumber(value: number) {
 function getFileExt(fileName: string) {
   const ext = path.extname(fileName || "").toLowerCase();
   return ext || ".pdf";
+}
+
+function safeEmployeeFolderName(value: string) {
+  return value
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+    .replace(/\s+/g, "_")
+    .replace(/^\.+$/, "_")
+    .slice(0, 120);
+}
+
+function validateEmployeeDocumentFile(file: File) {
+  const ext = path.extname(file.name || "").toLowerCase();
+
+  if (![".pdf", ".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
+    throw new Error("Unsupported employee document extension");
+  }
+
+  if (!ALLOWED_EMPLOYEE_DOCUMENT_TYPES.has(file.type)) {
+    throw new Error("Unsupported employee document MIME type");
+  }
+
+  if (file.size > MAX_EMPLOYEE_DOCUMENT_SIZE) {
+    throw new Error("Employee document is larger than 10MB");
+  }
+
+  return ext;
+}
+
+function employeeDocumentFile(formData: FormData, config: typeof EMPLOYEE_DOCUMENT_FIELDS[number]) {
+  return (formData.get(config.field) || formData.get(config.legacyField)) as File | null;
+}
+
+async function saveEmployeeDocumentFile({
+  file,
+  documentType,
+  employeeFolderName,
+  requestId,
+}: {
+  file: File;
+  documentType: string;
+  employeeFolderName: string;
+  requestId: string;
+}) {
+  const ext = validateEmployeeDocumentFile(file);
+  const uploadDir = path.join(EMPLOYEE_DOCUMENTS_ROOT, employeeFolderName);
+  const finalFileName = `${documentType}${ext}`;
+  const filePath = path.join(uploadDir, finalFileName);
+  const tempPath = path.join(uploadDir, `.${finalFileName}.${requestId}.tmp`);
+
+  if (path.basename(employeeFolderName) !== employeeFolderName) {
+    throw new Error("Invalid employee folder name");
+  }
+
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(tempPath, Buffer.from(await file.arrayBuffer()));
+
+  const existingFiles = await readdir(uploadDir);
+  await Promise.all(
+    existingFiles
+      .filter((name) => name.startsWith(`${documentType}.`))
+      .map((name) => rm(path.join(uploadDir, name), { force: true }))
+  );
+
+  await rename(tempPath, filePath);
+
+  return `employee_documents/${employeeFolderName}/${finalFileName}`;
 }
 
 function getCompanyPrefix(companyId: number) {
@@ -106,6 +191,10 @@ export async function POST(request: Request) {
     const session = await getServerSession();
     logDoc(requestId, "session", { exists: !!session });
 
+    if (!session?.user) {
+      return jsonError(requestId, "Unauthorized", 401);
+    }
+
     const formData = await request.formData();
     const keys = Array.from(formData.keys());
 
@@ -162,6 +251,26 @@ export async function POST(request: Request) {
       });
 
       return jsonError(requestId, "Missing company", 400);
+    }
+
+    const dbUser = await prisma.users.findFirst({
+      where: {
+        OR: [
+          { username: (session.user as any)?.username || session.user.name || "" },
+          { email: session.user.email || "" },
+          { full_name: session.user.name || "" },
+        ],
+      },
+      include: { roles: true },
+    });
+    const sessionRole = String(
+      dbUser?.roles?.name || (session.user as any)?.role || ""
+    ).toUpperCase();
+    const sessionCompanyId = dbUser?.company_id || (session.user as any)?.companyId;
+    const isStaffUser = ["ADMIN", "STAFF", "SUPERADMIN"].includes(sessionRole);
+
+    if (!isStaffUser && Number(sessionCompanyId) !== Number(companyId)) {
+      return jsonError(requestId, "Forbidden", 403);
     }
 
     /**
@@ -295,11 +404,56 @@ export async function POST(request: Request) {
       data: dataToCreate,
     });
 
+    const employeeFolderName =
+      safeEmployeeFolderName(created.emp_code || `employee-${created.id}`) ||
+      `employee-${created.id}`;
+    const uploaded_documents = {
+      passport: false,
+      visa: false,
+      work_permit: false,
+      ninety_day: false,
+    };
+    const documentUpdateData: Record<string, string> = {};
+
+    for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
+      const documentFile = employeeDocumentFile(formData, config);
+
+      if (documentFile && documentFile.size > 0) {
+        validateEmployeeDocumentFile(documentFile);
+      }
+    }
+
+    for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
+      const documentFile = employeeDocumentFile(formData, config);
+
+      if (!documentFile || documentFile.size === 0) {
+        continue;
+      }
+
+      const relativePath = await saveEmployeeDocumentFile({
+        file: documentFile,
+        documentType: config.type,
+        employeeFolderName,
+        requestId,
+      });
+
+      documentUpdateData[config.dbField] = relativePath;
+      uploaded_documents[config.type] = true;
+    }
+
+    if (Object.keys(documentUpdateData).length > 0) {
+      await prisma.employee_document_profiles.update({
+        where: { id: created.id },
+        data: documentUpdateData,
+      });
+    }
+
     logDoc(requestId, "prisma created", {
       id: created.id,
       emp_code: created.emp_code,
       document_file_name: created.document_file_name,
       healthcare_rights: healthcareRights,
+      uploaded_documents,
     });
 
     logDoc(requestId, "CREATE_EMPLOYEE END", {
@@ -313,6 +467,7 @@ export async function POST(request: Request) {
       emp_code: created.emp_code,
       document_file_name: created.document_file_name,
       healthcare_rights: healthcareRights,
+      uploaded_documents,
       requestId,
     });
   } catch (error: any) {
