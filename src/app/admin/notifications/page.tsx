@@ -2,10 +2,31 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import NotificationClient from "./NotificationClient";
+import DocumentExpiryNotificationSection from "@/components/DocumentExpiryNotificationSection";
+import { buildDocumentExpiryAlerts } from "@/lib/document-alerts";
 
 export default async function NotificationsPage() {
   const session = await getServerSession();
   if (!session) redirect("/login");
+
+  const sessionName = session.user?.name || "";
+  const sessionEmail = session.user?.email || "";
+  const sessionUsername = (session.user as any)?.username || "";
+  const dbUser = await prisma.users.findFirst({
+    where: {
+      OR: [
+        { username: sessionUsername },
+        { email: sessionEmail },
+        { full_name: sessionName },
+      ],
+    },
+    include: { roles: true },
+  });
+  const role = String(dbUser?.roles?.name || (session.user as any)?.role || "").toUpperCase();
+
+  if (!["ADMIN", "STAFF", "SUPERADMIN"].includes(role)) {
+    redirect("/company-dashboard");
+  }
 
   // ดึงข้อมูลการแจ้งเตือนทั้งหมด พร้อมดึงชื่อ user ที่เป็นเจ้าของการแจ้งเตือนนั้น
   const notifications = await prisma.notifications.findMany({
@@ -32,6 +53,15 @@ export default async function NotificationsPage() {
     recipientName: noti.users?.full_name || noti.users?.username || 'ผู้ใช้ทั่วไป (ไม่ระบุตัวตน)',
   }));
 
+  const employees = await prisma.employee_document_profiles.findMany({
+    orderBy: { created_at: "desc" },
+  });
+  const companies = await prisma.companies.findMany({
+    select: { id: true, company_name: true },
+  });
+  const companyNameById = new Map(companies.map((company) => [company.id, company.company_name]));
+  const documentExpiryAlerts = buildDocumentExpiryAlerts(employees, companyNameById);
+
   return (
     <div className="font-sans text-gray-800 bg-[#f4f7fe] min-h-screen p-6 md:p-8">
       
@@ -55,6 +85,11 @@ export default async function NotificationsPage() {
       </div>
 
       {/* เรียกใช้งาน Client Component */}
+      <DocumentExpiryNotificationSection
+        summary={documentExpiryAlerts.summary}
+        items={documentExpiryAlerts.items}
+      />
+
       <NotificationClient initialData={mappedNotifications} />
 
     </div>

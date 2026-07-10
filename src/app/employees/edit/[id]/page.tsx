@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import BackButton from "./BackButton";
 import ApiActionForm from "../../create/ApiActionForm"; // ปรับ Path ให้ตรงกับไฟล์ ApiActionForm ในเครื่องคุณ
 
 export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +32,10 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
             <div className="p-3 border rounded-xl"><label className="block text-xs font-bold">90 Days (90D)</label><input type="file" name="ninety_day_file" /></div>
           </div>
 
-          <button type="submit" className="mt-6 px-8 py-3 bg-blue-600 text-white font-bold rounded-xl">บันทึกการแก้ไข</button>
+          <div className="mt-6">
+            <BackButton />
+            <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl">บันทึกการแก้ไข</button>
+          </div>
         </ApiActionForm>
       </div>
     </div>

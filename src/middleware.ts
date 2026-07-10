@@ -7,12 +7,14 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
     const role = String(token?.role || "").toUpperCase();
+    const internalRoles = ["ADMIN", "STAFF", "SUPERADMIN"];
+    const isInternal = internalRoles.includes(role);
 
     if (path === "/dashboard" && role === "CUSTOMER") {
       return NextResponse.redirect(new URL("/company-dashboard", req.url));
     }
 
-    if (path.startsWith("/admin") && role !== "ADMIN") {
+    if (path.startsWith("/admin") && !isInternal) {
       if (role === "CUSTOMER") {
         return NextResponse.redirect(new URL("/company-dashboard", req.url));
       }
@@ -20,7 +22,7 @@ export default withAuth(
     }
 
     const staffOnlyPaths = ["/employees", "/employee-doc-approvals", "/ninety-day-renewal", "/passport-renewal", "/visa-renewal", "/work-permit-renewal"];
-    if (role === "CUSTOMER" && staffOnlyPaths.some(p => path.startsWith(p))) {
+    if (!isInternal && staffOnlyPaths.some(p => path.startsWith(p))) {
       return NextResponse.redirect(new URL("/company-dashboard", req.url));
     }
   },

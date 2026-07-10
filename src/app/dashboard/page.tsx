@@ -38,8 +38,10 @@ export default async function DashboardPage() {
   const isInternal = 
     sessionRole === "ADMIN" || 
     sessionRole === "STAFF" || 
+    sessionRole === "SUPERADMIN" || 
     dbRole === "ADMIN" || 
     dbRole === "STAFF" || 
+    dbRole === "SUPERADMIN" || 
     safeLoginName === "admin" ||
     safeLoginName.includes("cyd") || 
     safeEmail.startsWith("admin");

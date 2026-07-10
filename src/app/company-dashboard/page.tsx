@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import SpxRegistrationSection from "./SpxRegistrationSection";
 import Link from "next/link";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
+import DocumentExpiryNotificationSection from "@/components/DocumentExpiryNotificationSection";
+import { buildDocumentExpiryAlerts } from "@/lib/document-alerts";
 
 interface PageProps {
   searchParams: Promise<{ deleteId?: string; viewDocId?: string; editId?: string }>;
@@ -70,6 +72,8 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
   }
 
   const totalEmployees = employees.length;
+  const companyMap = new Map(company ? [[company.id, company.company_name]] : []);
+  const documentExpiryAlerts = buildDocumentExpiryAlerts(employees, companyMap);
 
   // 🟢 อ่านค่า URL Param เพื่อเปิด Popup ต่างๆ
   const resolvedSearchParams = await searchParams;
@@ -182,6 +186,11 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
           </div>
         ))}
       </div>
+
+      <DocumentExpiryNotificationSection
+        summary={documentExpiryAlerts.summary}
+        items={documentExpiryAlerts.items}
+      />
 
       {/* ตารางรายชื่อพนักงาน */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">

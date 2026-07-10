@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link"; 
 import SecureDocumentButton from "@/components/SecureDocumentButton";
+import DocumentExpiryNotificationSection from "@/components/DocumentExpiryNotificationSection";
+import { buildDocumentExpiryAlerts } from "@/lib/document-alerts";
 
 function documentHref(documentFileName: string) {
   if (/^https?:\/\//i.test(documentFileName) || documentFileName.startsWith("/")) {
@@ -95,6 +97,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const companies = await prisma.companies.findMany({
     orderBy: { company_name: "asc" },
   });
+  const companyMap = new Map(companies.map((company) => [company.id, company.company_name]));
+  const documentExpiryAlerts = buildDocumentExpiryAlerts(rawEmployees, companyMap);
 
   const employees = Array.from(
     new Map(
@@ -130,6 +134,11 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
           </Link>
         </div>
       </div>
+
+      <DocumentExpiryNotificationSection
+        summary={documentExpiryAlerts.summary}
+        items={documentExpiryAlerts.items}
+      />
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
