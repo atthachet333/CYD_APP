@@ -8,11 +8,13 @@ export default function ApiActionForm({
   endpoint,
   children,
   className,
+  redirectTo = "/employees/create",
   successMessage = "ดำเนินการสำเร็จ",
 }: {
   endpoint: string;
   children: ReactNode;
   className?: string;
+  redirectTo?: string;
   successMessage?: string;
 }) {
   const router = useRouter();
@@ -46,7 +48,7 @@ export default function ApiActionForm({
       }
 
       alert(successMessage);
-      router.push("/employees/create");
+      router.push(redirectTo);
       router.refresh();
     } catch (error: any) {
       console.error("[API_ACTION_FORM] fetch error:", error);

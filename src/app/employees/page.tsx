@@ -13,6 +13,22 @@ function documentHref(documentFileName: string) {
   return `/api/documents/${encodeURIComponent(documentFileName)}`;
 }
 
+// ✅ อัปเกรดฟังก์ชันแปลงวันที่: ถ้าไม่มีข้อมูลให้ขึ้นว่า "ไม่ได้ระบุ"
+function formatThaiDate(dateString: any) {
+  if (!dateString) return "ไม่ได้ระบุ";
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "ไม่ได้ระบุ"; // เช็คว่าเป็นวันที่จริงๆ ไหม
+    return d.toLocaleDateString('th-TH', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch (e) {
+    return "ไม่ได้ระบุ";
+  }
+}
+
 interface PageProps {
   searchParams: Promise<{
     viewId?: string;
@@ -97,7 +113,14 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
   const companies = await prisma.companies.findMany({
     orderBy: { company_name: "asc" },
   });
-  const companyMap = new Map(companies.map((company) => [company.id, company.company_name]));
+
+  const companyMap = new Map(
+    companies.map((company) => [
+      company.id,
+      company.company_name,
+    ])
+  );
+
   const documentExpiryAlerts = buildDocumentExpiryAlerts(rawEmployees, companyMap);
 
   const employees = Array.from(
@@ -142,13 +165,15 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left text-sm whitespace-nowrap min-w-[1000px]">
+          <table className="w-full text-left text-sm whitespace-nowrap min-w-[1100px]">
             <thead>
               <tr className="bg-gray-50/80 text-gray-500 border-b border-gray-100 uppercase tracking-wider text-[11px] md:text-xs">
                 <th className="p-4 font-bold pl-6">รหัส</th>
                 <th className="p-4 font-bold">ชื่อ-นามสกุล</th>
                 <th className="p-4 font-bold text-center">ประเภทเวิร์ค</th>
                 <th className="p-4 font-bold text-center">เอกสาร</th>
+                <th className="p-4 font-bold text-center">ดูข้อมูล</th>
+                <th className="p-4 font-bold text-center">สถานะ</th>
                 <th className="p-4 font-bold text-center pr-6">จัดการ</th>
               </tr>
             </thead>
@@ -172,11 +197,21 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                       <span className={`px-2 py-1 rounded text-[10px] font-bold border shadow-sm ${emp.work_permit_number ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-500 border-red-200'}`}>WP</span>
                     </div>
                   </td>
+                  <td className="p-4 text-center">
+                    <Link href={`/employees?viewId=${emp.id}`} scroll={false} className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" title="รายละเอียด">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </Link>
+                  </td>
+                  <td className="p-4 text-center">
+                    <Link href={`#`} className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200 shadow-sm hover:bg-orange-500 hover:text-white transition-all whitespace-nowrap">
+                      รอต่อเอกสาร
+                    </Link>
+                  </td>
                   <td className="p-4 text-center pr-6">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href={`/employees?viewId=${emp.id}`} scroll={false} className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-200" title="รายละเอียด">
-                        👁️
-                      </Link>
                       {canViewDocs ? (
                         <Link href={`?docId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white transition-all shadow-sm">ดูเอกสาร</Link>
                       ) : (
@@ -184,12 +219,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                       )}
                       <Link href={`?moveId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-orange-600 border-orange-200 hover:bg-orange-500 hover:text-white transition-all shadow-sm">ย้ายบริษัท</Link>
                       <Link href={`?deleteId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-red-600 border-red-200 hover:bg-red-600 hover:text-white transition-all shadow-sm">ลบ</Link>
-                      
-                      {/* แก้ไขลิงก์ตรงนี้ให้ชี้ไปที่ /employee (ไม่มี s) ให้ตรงกับโฟลเดอร์ */}
-                      <Link href={`/employees/edit/${emp.id}`} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white transition-all block shadow-sm">
-                        แก้ไข
-                      </Link>
-
+                      <Link href={`/employees/edit/${emp.id}`} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm">แก้ไข</Link>
                     </div>
                   </td>
                 </tr>
@@ -202,11 +232,12 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
       {/* POPUP: ดูข้อมูลพนักงาน */}
       {viewEmployee && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
               <h2 className="text-xl font-bold text-gray-800">ข้อมูลพนักงาน</h2>
               <Link href="/employees" className="text-gray-400 hover:text-red-500 transition-colors p-2 bg-gray-50 hover:bg-red-50 rounded-lg">✖</Link>
             </div>
+            
             <div className="p-6 overflow-y-auto space-y-6 text-sm custom-scrollbar">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
@@ -224,13 +255,55 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                   </p>
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/30 p-6 rounded-2xl border border-blue-100">
                 <div><p className="text-xs font-bold text-gray-500 mb-1">ชื่อ-นามสกุล (TH)</p><p className="font-bold text-lg text-gray-800">{viewEmployee.first_name_th} {viewEmployee.last_name_th}</p></div>
                 <div><p className="text-xs font-bold text-gray-500 mb-1">ชื่อ-นามสกุล (EN)</p><p className="font-bold text-lg text-gray-800 uppercase">{viewEmployee.first_name_en} {viewEmployee.last_name_en}</p></div>
               </div>
+
+              {/* ✅ แก้ไข: ดักชื่อ Field เผื่อไว้ให้ครอบคลุม (เชื่อมข้อมูลจาก DB จริงๆ) */}
+              <div className="mt-6 border-t border-gray-100 pt-6">
+                <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> วันหมดอายุเอกสาร (Expiration Dates)
+                </h3>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                    <p className="text-[11px] font-bold text-orange-600 mb-1 uppercase tracking-wide">Passport</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      {formatThaiDate(viewEmployee.passport_expiry_date)}
+                    </p>
+                  </div>
+
+                  <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                    <p className="text-[11px] font-bold text-purple-600 mb-1 uppercase tracking-wide">Visa</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      {formatThaiDate(viewEmployee.visa_expiry_date)}
+                    </p>
+                  </div>
+
+                  <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                    <p className="text-[11px] font-bold text-emerald-600 mb-1 uppercase tracking-wide">Work Permit</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      {formatThaiDate(viewEmployee.work_permit_expiry_date)}
+                    </p>
+                  </div>
+
+                  <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
+                    <p className="text-[11px] font-bold text-pink-600 mb-1 uppercase tracking-wide">90 Days</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      {formatThaiDate(viewEmployee.ninety_day_report_date || viewEmployee.report_90_days_date)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
+
             <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end">
-              <Link href="/employees" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 shadow-sm">ปิดหน้าต่าง</Link>
+              <Link href="/employees" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 shadow-sm transition-colors">
+                ปิดหน้าต่าง
+              </Link>
             </div>
           </div>
         </div>
@@ -246,7 +319,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
             </div>
             <div className="p-6">
               {activeDocEmp.document_file_name && (
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm">
+                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm mb-4">
                   <div>
                     <p className="font-bold text-gray-800">Main Document</p>
                     <p className="text-xs text-gray-500 mt-1">{activeDocEmp.document_file_name}</p>
@@ -286,7 +359,7 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
               </div>
             </div>
             <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-              <Link href="/employees" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 shadow-sm">ปิดหน้าต่าง</Link>
+              <Link href="/employees" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 shadow-sm transition-colors">ปิดหน้าต่าง</Link>
             </div>
           </div>
         </div>
@@ -315,8 +388,8 @@ export default async function EmployeesPage({ searchParams }: PageProps) {
                 </select>
               </div>
               <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
-                <Link href="/employees" className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100">ยกเลิก</Link>
-                <button type="submit" className="px-5 py-2.5 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 shadow-md">ยืนยันการย้าย</button>
+                <Link href="/employees" className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 transition-colors">ยกเลิก</Link>
+                <button type="submit" className="px-5 py-2.5 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 shadow-md transition-colors">ยืนยันการย้าย</button>
               </div>
             </form>
           </div>
