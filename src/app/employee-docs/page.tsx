@@ -84,7 +84,7 @@ export default async function EmployeeDocsPage({
   const defaultLastName = nameParts.slice(1).join(" ") || "";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-gray-50 p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex justify-between items-center">
           <div>

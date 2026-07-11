@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import ApiActionForm from "./ApiActionForm";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
+import RouteModalEffects from "@/components/RouteModalEffects";
 
 function documentHref(documentFileName: string) {
   const filename = documentFileName.split(/[\\/]/).pop() || "";
@@ -123,6 +124,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
   return (
     <div className="font-sans text-gray-800 bg-[#f4f7fe] min-h-screen p-4 md:p-6 lg:p-8 relative">
+      {(viewEmployee || activeDeleteCompany || activeDocEmp || activeMoveEmp || activeDeleteEmp) && <RouteModalEffects closeHref="/employees/create" />}
       
       {/* ----------------- ฟอร์มเพิ่มพนักงานใหม่ ----------------- */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
@@ -380,15 +382,15 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* POPUP: ดูข้อมูลพนักงาน (เพิ่ม Backend Note การดึงวันหมดอายุให้ครบ) */}
       {viewEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="ข้อมูลพนักงาน" className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
               <h2 className="text-xl font-bold text-gray-800">ข้อมูลพนักงาน</h2>
               <Link href="/employees/create" className="text-gray-400 hover:text-red-500 transition-colors p-2 bg-gray-50 hover:bg-red-50 rounded-lg">✖</Link>
             </div>
             
-            <div className="p-6 overflow-y-auto space-y-6 text-sm custom-scrollbar">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="custom-scrollbar space-y-6 overflow-y-auto p-4 text-sm sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                   <p className="text-xs font-bold text-gray-500 mb-1">รหัส</p>
                   <p className="font-bold text-lg text-blue-700">{viewEmployee.emp_code || '-'}</p>
@@ -464,8 +466,8 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* 🟢 Popup แจ้งเตือนการลบบริษัท */}
       {activeDeleteCompany && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="จัดการบริษัท" className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-[2rem] bg-white p-8 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             {activeDeleteCompany.count > 0 ? (
               <>
                 <div className="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
@@ -503,25 +505,25 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* POPUP: ดูเอกสาร 4 ปุ่ม */}
       {activeDocEmp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="เอกสารแนบพนักงาน" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-purple-50">
               <h2 className="text-lg font-bold text-purple-800">เอกสารแนบของ {activeDocEmp.first_name_th}</h2>
               <Link href="/employees/create" className="text-gray-400 hover:text-red-500 transition-colors">✖</Link>
             </div>
             
-            <div className="p-6">
+            <div className="overflow-y-auto p-4 sm:p-6">
               {activeDocEmp.document_file_name && (
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors mb-4">
+                <div className="mb-4 flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">Main Document</p>
-                    <p className="text-xs text-gray-500 mt-1">{activeDocEmp.document_file_name}</p>
+                    <p className="mt-1 break-all text-xs text-gray-500" title={activeDocEmp.document_file_name}>{activeDocEmp.document_file_name}</p>
                   </div>
                   <SecureDocumentButton viewUrl={documentHref(activeDocEmp.document_file_name)} className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors">
+                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">Passport (PP)</p>
                     <p className="text-xs text-gray-500 mt-1">หนังสือเดินทาง</p>
@@ -529,7 +531,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                   <SecureDocumentButton employeeId={activeDocEmp.id} documentType="passport" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors">
+                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">Visa (VS)</p>
                     <p className="text-xs text-gray-500 mt-1">วีซ่า</p>
@@ -537,7 +539,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                   <SecureDocumentButton employeeId={activeDocEmp.id} documentType="visa" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors">
+                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">Work Permit</p>
                     <p className="text-xs text-gray-500 mt-1">ใบอนุญาตทำงาน</p>
@@ -545,7 +547,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                   <SecureDocumentButton employeeId={activeDocEmp.id} documentType="work_permit" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
 
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm hover:border-purple-300 transition-colors">
+                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">90 Days (90D)</p>
                     <p className="text-xs text-gray-500 mt-1">รายงานตัว 90 วัน</p>
@@ -564,8 +566,8 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* POPUP: ย้ายบริษัท */}
       {activeMoveEmp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="ย้ายบริษัทพนักงาน" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-orange-50">
               <h2 className="text-lg font-bold text-orange-800">ย้ายบริษัทสังกัด</h2>
               <Link href="/employees/create" className="text-gray-400 hover:text-red-500 transition-colors">✖</Link>
@@ -597,8 +599,8 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* POPUP: ลบพนักงาน */}
       {activeDeleteEmp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="ยืนยันการลบพนักงาน" className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-[2rem] bg-white p-8 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </div>

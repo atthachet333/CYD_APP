@@ -27,15 +27,15 @@ export default async function DocApprovalsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto font-sans text-gray-800 bg-[#f4f7fe] min-h-screen space-y-6">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl space-y-6 bg-[#f4f7fe] p-4 font-sans text-gray-800 sm:p-6 md:p-8">
       <div className="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative overflow-hidden group">
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-bl from-blue-50 to-transparent rounded-full opacity-60" />
-        <div className="flex items-center gap-4 relative z-10">
+        <div className="relative z-10 flex min-w-0 items-center gap-3 sm:gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0a1e4d] to-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-[#111c44] tracking-tight">ระบบอนุมัติเอกสาร</h1>
+          <div className="min-w-0">
+            <h1 className="break-words text-xl font-extrabold text-[#111c44] sm:text-2xl">ระบบอนุมัติเอกสาร</h1>
             <p className="text-xs md:text-sm text-gray-500 mt-0.5">ตรวจสอบและจัดการคำขออนุมัติเอกสารพนักงานในระบบ</p>
           </div>
         </div>

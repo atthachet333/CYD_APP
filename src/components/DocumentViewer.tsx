@@ -32,7 +32,7 @@ export default function DocumentViewer({ empId, docType, title }: Props) {
     <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
       <h4 className="font-bold text-gray-800 mb-4">{title}</h4>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {documentType ? (
           <SecureDocumentButton
             employeeId={empId}

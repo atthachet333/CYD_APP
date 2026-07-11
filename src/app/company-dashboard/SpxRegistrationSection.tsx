@@ -1,7 +1,7 @@
 ﻿// src/app/company-dashboard/SpxRegistrationSection.tsx
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SpxRegistrationSectionProps {
   companyName: string;
@@ -22,6 +22,20 @@ export default function SpxRegistrationSection({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSubmitting) setIsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen, isSubmitting]);
 
   const isSPX =
     companyName.toUpperCase().includes("SPX") ||
@@ -70,7 +84,7 @@ export default function SpxRegistrationSection({
     <div className="mt-4">
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold px-6 py-2.5 rounded-full text-[13px] shadow-sm transition-all flex items-center space-x-2"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#3b82f6] px-6 py-2.5 text-[13px] font-bold text-white shadow-sm transition-all hover:bg-[#2563eb] sm:w-auto sm:rounded-full"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -79,12 +93,12 @@ export default function SpxRegistrationSection({
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-4xl w-full max-h-[90vh] overflow-y-auto font-sans text-gray-800 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm sm:p-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="spx-registration-title" className="max-h-[calc(100dvh-1rem)] w-full max-w-4xl overflow-y-auto rounded-2xl border border-gray-100 bg-white font-sans text-gray-800 shadow-2xl animate-in fade-in zoom-in-95 duration-200 sm:max-h-[90dvh]">
             {/* Header */}
-            <div className="sticky top-0 z-10 p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl shadow-sm">
-              <div>
-                <h3 className="text-xl font-extrabold text-[#111c44]">ลงทะเบียนข้อมูลพนักงาน (เอกสาร)</h3>
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 rounded-t-2xl border-b border-gray-100 bg-white p-4 shadow-sm sm:items-center sm:p-6">
+              <div className="min-w-0">
+                <h3 id="spx-registration-title" className="break-words text-lg font-extrabold text-[#111c44] sm:text-xl">ลงทะเบียนข้อมูลพนักงาน (เอกสาร)</h3>
                 <p className="text-sm font-bold text-blue-600 mt-1">เฉพาะสาขา: {companyName}</p>
               </div>
               <button type="button" onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-2 rounded-xl transition-all">
@@ -95,7 +109,7 @@ export default function SpxRegistrationSection({
             </div>
 
             {/* ฟอร์มข้อมูลพนักงาน */}
-            <form ref={formRef} className="p-6 md:p-8 space-y-6 text-sm">
+            <form ref={formRef} className="space-y-6 p-4 text-sm sm:p-6 md:p-8">
               <div>
                 <label className="block font-bold text-gray-700 mb-1.5">รหัสพนักงาน</label>
                 <input type="text" name="emp_code" placeholder="เช่น SPX-001" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50 focus:bg-white transition-colors" />
@@ -165,7 +179,7 @@ export default function SpxRegistrationSection({
               </div>
 
               {/* 🟢 ส่วนอัปโหลดไฟล์ 4 ช่องแยกอิสระ (เฉพาะ SPX) */}
-              <div className="border border-blue-200 bg-blue-50/40 p-6 rounded-2xl space-y-4">
+              <div className="space-y-4 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-6">
                 <h4 className="font-bold text-gray-800 text-base">
                   อัปโหลดเอกสารพนักงาน <span className="text-red-500 text-sm font-normal">(เฉพาะสาขา SPX)</span>
                 </h4>
@@ -189,7 +203,7 @@ export default function SpxRegistrationSection({
                 </div>
               </div>
 
-              <div className="border border-gray-200 p-6 rounded-2xl bg-gray-50/50">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4 sm:p-6">
                 <h3 className="font-bold text-gray-800 mb-5 text-base">ข้อมูลวันสำคัญ (แก้ไขเองได้)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -223,11 +237,11 @@ export default function SpxRegistrationSection({
                 </div>
               </div>
 
-              <div className="sticky bottom-0 pt-6 pb-2 flex justify-end items-center border-t border-gray-200 bg-white">
-                <button type="button" onClick={() => setIsOpen(false)} disabled={isSubmitting} className="px-6 py-3 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 transition-all mr-3 disabled:opacity-50">
+              <div className="sticky bottom-0 flex flex-col-reverse items-stretch justify-end gap-2 border-t border-gray-200 bg-white pb-2 pt-4 sm:flex-row sm:items-center sm:pt-6">
+                <button type="button" onClick={() => setIsOpen(false)} disabled={isSubmitting} className="min-h-11 rounded-xl px-6 py-3 text-sm font-bold text-gray-500 transition-all hover:bg-gray-100 disabled:opacity-50">
                   ยกเลิก
                 </button>
-                <button type="button" onClick={handleManualSubmit} disabled={isSubmitting} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition active:scale-95 flex items-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                <button type="button" onClick={handleManualSubmit} disabled={isSubmitting} className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-bold text-white shadow-md transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70">
                   {isSubmitting ? <span>กำลังบันทึก...</span> : <span>บันทึกข้อมูลพนักงาน</span>}
                 </button>
               </div>

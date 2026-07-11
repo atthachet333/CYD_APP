@@ -63,22 +63,22 @@ export default async function NotificationsPage() {
   const documentExpiryAlerts = buildDocumentExpiryAlerts(employees, companyNameById);
 
   return (
-    <div className="font-sans text-gray-800 bg-[#f4f7fe] min-h-screen p-6 md:p-8">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-[#f4f7fe] p-4 font-sans text-gray-800 sm:p-6 md:p-8">
       
       {/* ส่วนหัวหน้าจอ */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="flex items-center gap-4">
+      <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 md:flex-row md:items-end">
+        <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
           <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center shrink-0">
             <svg className="w-6 h-6 text-rose-500 fill-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
           </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-[#111c44] tracking-tight">ประวัติการแจ้งเตือน (Notifications)</h1>
+          <div className="min-w-0">
+            <h1 className="break-words text-xl font-extrabold text-[#111c44] sm:text-2xl">ประวัติการแจ้งเตือน (Notifications)</h1>
             <p className="text-sm text-gray-500 mt-1 font-medium">ตรวจสอบประวัติการส่งแจ้งเตือนระบบไปยังผู้ใช้งานทั้งหมด</p>
           </div>
         </div>
         
         {/* ปุ่มสร้างแจ้งเตือนใหม่ (สำหรับ UI ไปก่อน สามารถต่อยอดทำ Modal ส่งแจ้งเตือนได้) */}
-        <button className="bg-[#111c44] hover:bg-[#0f2b6f] text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center gap-2">
+        <button type="button" className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#111c44] px-5 py-2.5 font-bold text-white shadow-sm transition-all hover:bg-[#0f2b6f] md:w-auto">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
           ส่งการแจ้งเตือนใหม่
         </button>

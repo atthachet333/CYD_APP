@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 type EmployeeRow = {
@@ -48,10 +48,25 @@ function statusFor(value: string | null) {
 
 export default function NinetyDayRenewalClient({ employees }: { employees: EmployeeRow[] }) {
   const router = useRouter();
+
   const [activeEmployee, setActiveEmployee] = useState<EmployeeRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!activeEmployee) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !submitting) setActiveEmployee(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeEmployee, submitting]);
 
   async function submit(formData: FormData) {
     setSubmitting(true);
@@ -143,9 +158,12 @@ export default function NinetyDayRenewalClient({ employees }: { employees: Emplo
       </div>
 
       {activeEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
           <form
-            className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ต่อเอกสาร 90 วัน"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
             onSubmit={(event) => {
               event.preventDefault();
               submit(new FormData(event.currentTarget));
@@ -175,7 +193,7 @@ export default function NinetyDayRenewalClient({ employees }: { employees: Emplo
                 </SecureDocumentButton>
               </div>
             )}
-            <div className="mt-5 flex justify-end gap-3">
+            <div className="mt-5 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
               <button type="button" disabled={submitting} onClick={() => setActiveEmployee(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold disabled:opacity-50">
                 ยกเลิก
               </button>

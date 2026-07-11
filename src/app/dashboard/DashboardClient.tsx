@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function DashboardClient({ 
@@ -8,6 +8,22 @@ export default function DashboardClient({
 }: any) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [viewEmployee, setViewEmployee] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!activeModal && !viewEmployee) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setActiveModal(null);
+      setViewEmployee(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeModal, viewEmployee]);
 
   const formatShortCompany = (name: string) => {
     if (!name) return "-";
@@ -46,7 +62,7 @@ export default function DashboardClient({
   const maxCount = topBranchStats.length > 0 ? Math.max(...topBranchStats.map((c: any) => c.count)) : 1;
 
   return (
-    <div className="p-2 sm:p-3 md:p-4 max-w-[1600px] mx-auto bg-gray-50 min-h-screen pb-12 font-sans text-gray-800">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-gray-50 p-2 pb-12 font-sans text-gray-800 sm:p-3 sm:pb-12 md:p-4 md:pb-12">
       
       {/* Welcome Banner */}
       <div className="mb-3 bg-gradient-to-br from-[#0a1e4d] via-[#0f2b6f] to-blue-800 rounded-xl p-3 md:p-5 shadow-sm relative overflow-hidden border border-blue-700/50">
@@ -110,8 +126,8 @@ export default function DashboardClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-xs text-gray-700 font-medium">
-                {employeesData.map((emp: any, index: number) => (
-                  <tr key={index} className="hover:bg-blue-50/40 transition-colors">
+                {employeesData.map((emp: any) => (
+                  <tr key={`${emp.empCode}-${emp.name}-${emp.company}`} className="hover:bg-blue-50/40 transition-colors">
                     <td className="p-2.5 pl-4 font-black text-[#0f2b6f]">{emp.empCode}</td>
                     <td className="p-2.5"><div className="truncate max-w-[120px]">{emp.name}</div></td>
                     <td className="p-2.5 text-gray-400"><div className="truncate max-w-[150px]">{formatShortCompany(emp.company)}</div></td>
@@ -137,10 +153,10 @@ export default function DashboardClient({
           <div className="p-4 flex-1 flex flex-col justify-between relative">
             {topBranchStats.length > 0 ? (
               <div className="flex-1 flex items-end justify-around gap-2 mt-2 min-h-[250px] pb-5 relative">
-                {topBranchStats.map((stat: any, i: number) => {
+                {topBranchStats.map((stat: any) => {
                   const heightPercent = (stat.count / maxCount) * 100;
                   return (
-                    <div key={i} className="relative z-10 w-full max-w-[30px] flex flex-col justify-end items-center group h-full">
+                    <div key={stat.fullName} className="relative z-10 w-full max-w-[30px] flex flex-col justify-end items-center group h-full">
                       <span className="text-[10px] font-bold text-white bg-[#0f2b6f] px-1.5 py-0.5 rounded shadow absolute -top-6 opacity-0 group-hover:opacity-100 transition-all z-20">{stat.count}</span>
                       <div className="w-full bg-gradient-to-t from-[#0f2b6f] to-cyan-400 rounded-t-sm transition-all duration-300 hover:from-blue-600 hover:to-cyan-300 cursor-pointer" style={{ height: `${Math.max(heightPercent, 10)}%` }}></div>
                       <div className="absolute -bottom-6 w-[60px] text-center"><span className="text-[9px] font-bold text-gray-400 truncate block px-0.5 group-hover:text-[#0f2b6f]">{stat.name}</span></div>
@@ -157,9 +173,9 @@ export default function DashboardClient({
       
       {/* 🟢 1. MODAL: พนักงาน (Employees) */}
       {activeModal === "employees" && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 999999 }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 999999 }}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" onClick={() => setActiveModal(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200 border border-slate-100">
+          <div role="dialog" aria-modal="true" aria-label="รายชื่อพนักงานทั้งหมด" className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 md:p-6 bg-gradient-to-r from-blue-600 to-cyan-500 flex justify-between items-center text-white relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full filter blur-xl"></div>
               <div className="relative z-10 flex items-center space-x-4">
@@ -175,7 +191,7 @@ export default function DashboardClient({
               <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 text-xs font-bold relative z-10">✕</button>
             </div>
             <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-white">
-              <table className="w-full text-left border-collapse">
+              <table className="min-w-[640px] w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
                   <tr className="text-slate-400 font-extrabold text-[10px] md:text-xs uppercase tracking-wider">
                     <th className="p-4 pl-6">รหัสพนักงาน</th>
@@ -185,8 +201,8 @@ export default function DashboardClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium text-xs md:text-sm">
-                  {employeesData.map((emp: any, i: number) => (
-                    <tr key={i} className="hover:bg-blue-50/40">
+                  {employeesData.map((emp: any) => (
+                    <tr key={`${emp.empCode}-${emp.name}-${emp.company}`} className="hover:bg-blue-50/40">
                       <td className="p-4 pl-6 font-bold text-blue-700">{emp.empCode}</td>
                       <td className="p-4">{emp.name}</td>
                       <td className="p-4 text-slate-500">{emp.company}</td>
@@ -206,9 +222,9 @@ export default function DashboardClient({
 
       {/* 🟢 2. MODAL: ผู้ใช้งาน (Users) */}
       {activeModal === "users" && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 999999 }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 999999 }}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" onClick={() => setActiveModal(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200 border border-slate-100">
+          <div role="dialog" aria-modal="true" aria-label="ผู้ใช้งานในระบบทั้งหมด" className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 md:p-6 bg-gradient-to-r from-purple-600 to-fuchsia-500 flex justify-between items-center text-white relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full filter blur-xl"></div>
               <div className="relative z-10 flex items-center space-x-4">
@@ -224,7 +240,7 @@ export default function DashboardClient({
               <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 text-xs font-bold relative z-10">✕</button>
             </div>
             <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-white">
-              <table className="w-full text-left border-collapse">
+              <table className="min-w-[640px] w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
                   <tr className="text-slate-400 font-extrabold text-[10px] md:text-xs uppercase tracking-wider">
                     <th className="p-4 pl-6">ชื่อผู้ใช้งาน (Username)</th>
@@ -233,8 +249,8 @@ export default function DashboardClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium text-xs md:text-sm">
-                  {usersData.map((usr: any, i: number) => (
-                    <tr key={i} className="hover:bg-purple-50/40">
+                  {usersData.map((usr: any) => (
+                    <tr key={usr.username} className="hover:bg-purple-50/40">
                       <td className="p-4 pl-6 font-bold text-slate-800">{usr.username}</td>
                       <td className="p-4">{usr.full_name}</td>
                       <td className="p-4 text-center">
@@ -259,9 +275,9 @@ export default function DashboardClient({
 
       {/* 🟢 3. MODAL: อัปโหลด (Uploads) */}
       {activeModal === "uploads" && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 999999 }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 999999 }}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" onClick={() => setActiveModal(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200 border border-slate-100">
+          <div role="dialog" aria-modal="true" aria-label="รายการอัปโหลดเดือนนี้" className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 md:p-6 bg-gradient-to-r from-amber-500 to-orange-400 flex justify-between items-center text-white relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full filter blur-xl"></div>
               <div className="relative z-10 flex items-center space-x-4">
@@ -277,7 +293,7 @@ export default function DashboardClient({
               <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500 text-white flex items-center justify-center transition-all duration-200 text-xs font-bold relative z-10">✕</button>
             </div>
             <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-white">
-              <table className="w-full text-left border-collapse">
+              <table className="min-w-[640px] w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
                   <tr className="text-slate-400 font-extrabold text-[10px] md:text-xs uppercase tracking-wider">
                     <th className="p-4 pl-6">ชื่อไฟล์</th>
@@ -286,8 +302,8 @@ export default function DashboardClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium text-xs md:text-sm">
-                  {uploadsData.map((up: any, i: number) => (
-                    <tr key={i} className="hover:bg-amber-50/40">
+                  {uploadsData.map((up: any) => (
+                    <tr key={`${up.file}-${up.category}-${up.date}`} className="hover:bg-amber-50/40">
                       <td className="p-4 pl-6 font-bold text-slate-800">{up.file}</td>
                       <td className="p-4 text-slate-500">{up.category}</td>
                       <td className="p-4 text-center text-slate-500 font-mono text-xs">{up.date}</td>
@@ -306,9 +322,9 @@ export default function DashboardClient({
 
       {/* 🟢 4. MODAL: บริษัท (Companies - เหมือนเดิม) */}
       {activeModal === "companies" && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 999999 }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 999999 }}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity" onClick={() => setActiveModal(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl flex flex-col overflow-hidden max-h-[85vh] animate-in zoom-in-95 duration-200 border border-slate-100">
+          <div role="dialog" aria-modal="true" aria-label="บริษัททั้งหมด" className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 md:p-6 bg-gradient-to-r from-[#0a1e4d] via-[#0f2b6f] to-blue-800 flex justify-between items-center text-white relative overflow-hidden">
               <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full filter blur-xl"></div>
               <div className="relative z-10 flex items-center space-x-4">
@@ -324,7 +340,7 @@ export default function DashboardClient({
               <button onClick={() => setActiveModal(null)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-red-500/80 text-white flex items-center justify-center border border-white/10 hover:border-transparent transition-all duration-200 text-xs font-bold shadow-sm relative z-10">✕</button>
             </div>
             <div className="flex-1 overflow-auto custom-scrollbar p-0 bg-white">
-              <table className="w-full text-left border-collapse">
+              <table className="min-w-[640px] w-full text-left border-collapse">
                 <thead className="bg-slate-50 border-b border-slate-100 sticky top-0 backdrop-blur-sm z-10">
                   <tr className="text-slate-400 font-extrabold text-[10px] md:text-xs uppercase tracking-wider">
                     <th className="p-4 pl-6 w-full">นิตินัย / นิติบุคคล</th>
@@ -333,8 +349,8 @@ export default function DashboardClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-medium text-xs md:text-sm">
-                  {companiesData.map((comp: any, i: number) => (
-                    <tr key={i} className="transition-colors duration-150 hover:bg-blue-50/40 group odd:bg-white even:bg-slate-50/30">
+                  {companiesData.map((comp: any) => (
+                    <tr key={comp.id} className="transition-colors duration-150 hover:bg-blue-50/40 group odd:bg-white even:bg-slate-50/30">
                       <td className="p-4 pl-6 font-bold text-slate-800 flex items-center gap-2.5">
                         <span className="opacity-40 group-hover:opacity-100 group-hover:scale-110 transition-all duration-200 text-sm">🏢</span>
                         <span className="truncate max-w-[450px] group-hover:text-blue-700 transition-colors">{comp.company_name}</span>
@@ -362,9 +378,9 @@ export default function DashboardClient({
 
       {/* MODAL พนักงาน (คลิกจากตารางด้านล่าง) */}
       {viewEmployee && (
-        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 999999 }}>
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 999999 }}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setViewEmployee(null)}></div>
-          <div className="relative bg-white rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden border border-gray-100 animate-in zoom-in duration-150">
+          <div role="dialog" aria-modal="true" aria-label="รายละเอียดข้อมูลพนักงาน" className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-gray-100 bg-white shadow-2xl animate-in zoom-in duration-150">
             <div className="bg-gradient-to-r from-[#0a1e4d] to-[#1e4bb5] p-4 flex justify-between items-center text-white">
               <div>
                 <p className="text-[10px] text-cyan-200 font-bold uppercase tracking-wider mb-0.5">รายละเอียดข้อมูลพนักงาน</p>
@@ -374,7 +390,7 @@ export default function DashboardClient({
             </div>
             <div className="p-4 grid grid-cols-1 gap-3 text-xs font-medium text-gray-700">
               <div><span className="text-[10px] text-gray-400 block mb-1 font-bold">ชื่อ-นามสกุล</span><div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 font-bold text-gray-800">{viewEmployee.name || "-"}</div></div>
-              <div><span className="text-[10px] text-gray-400 block mb-1 font-bold">บริษัท / สาขา</span><div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-gray-600 truncate">{viewEmployee.company || "-"}</div></div>
+              <div><span className="text-[10px] text-gray-400 block mb-1 font-bold">บริษัท / สาขา</span><div className="truncate rounded-lg border border-gray-100 bg-gray-50 p-2.5 text-gray-600" title={viewEmployee.company || "-"}>{viewEmployee.company || "-"}</div></div>
             </div>
             <div className="p-3 border-t border-gray-100 flex justify-end bg-gray-50">
               <button type="button" onClick={() => setViewEmployee(null)} className="px-5 py-2 bg-[#0a1e4d] text-white text-xs font-bold rounded-lg">ปิดหน้าต่าง</button>

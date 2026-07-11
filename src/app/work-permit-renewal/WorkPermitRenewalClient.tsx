@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 type EmployeeRow = {
@@ -57,10 +57,25 @@ function workPermitNumber(employee: EmployeeRow) {
 
 export default function WorkPermitRenewalClient({ employees }: { employees: EmployeeRow[] }) {
   const router = useRouter();
+
   const [activeEmployee, setActiveEmployee] = useState<EmployeeRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!activeEmployee) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !submitting) setActiveEmployee(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [activeEmployee, submitting]);
 
   async function submit(formData: FormData) {
     setSubmitting(true);
@@ -175,9 +190,12 @@ export default function WorkPermitRenewalClient({ employees }: { employees: Empl
       </div>
 
       {activeEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
           <form
-            className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="ต่อใบอนุญาตทำงาน"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
             onSubmit={(event) => {
               event.preventDefault();
               submit(new FormData(event.currentTarget));
@@ -231,7 +249,7 @@ export default function WorkPermitRenewalClient({ employees }: { employees: Empl
               <textarea name="note" className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </label>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
               <button type="button" disabled={submitting} onClick={() => setActiveEmployee(null)} className="rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
                 ยกเลิก
               </button>

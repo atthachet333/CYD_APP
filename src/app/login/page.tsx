@@ -30,8 +30,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9] font-sans absolute top-0 left-0 w-full z-50">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+    <div className="absolute inset-0 z-50 flex min-h-[100dvh] w-full items-center justify-center overflow-y-auto bg-[#f1f5f9] p-4 font-sans">
+      <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-5 shadow-xl sm:p-8">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-[#0f2b6f] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
@@ -64,7 +64,7 @@ export default function LoginPage() {
             />
           </div>
           
-          {error && <div className="bg-red-50 text-red-500 text-xs font-semibold p-3 rounded-lg text-center border border-red-100">{error}</div>}
+          {error && <div className="break-words rounded-lg border border-red-100 bg-red-50 p-3 text-center text-xs font-semibold text-red-500">{error}</div>}
 
           <button type="submit" className="w-full bg-[#0f2b6f] hover:bg-[#173685] text-white font-bold py-3.5 rounded-xl transition-colors shadow-md">
             ลงชื่อเข้าใช้ระบบ

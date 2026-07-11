@@ -8,6 +8,7 @@ import SpxRegistrationSection from "./SpxRegistrationSection";
 import Link from "next/link";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 import DocumentExpiryNotificationSection from "@/components/DocumentExpiryNotificationSection";
+import RouteModalEffects from "@/components/RouteModalEffects";
 import { buildDocumentExpiryAlerts } from "@/lib/document-alerts";
 import { safeFileNameFrom } from "@/lib/docDebug";
 
@@ -113,8 +114,8 @@ function DocumentOpenControl({
   const hasFile = hasEmployeeDocumentFile(emp, documentType);
 
   return (
-    <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm">
-      <div>
+    <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+      <div className="min-w-0">
         <p className="font-bold text-gray-800">{label}</p>
         <p className="text-xs text-gray-500 mt-1">{description}</p>
       </div>
@@ -189,9 +190,10 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto font-sans text-gray-800 bg-[#f4f7fe] min-h-screen relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-[#111c44]">จัดการข้อมูลพนักงาน</h1>
+      {(viewEmployee || activeDocEmp) && <RouteModalEffects closeHref="/company-dashboard" />}
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6 md:flex-row md:items-center">
+        <div className="min-w-0">
+          <h1 className="break-words text-xl font-extrabold text-[#111c44] sm:text-2xl">จัดการข้อมูลพนักงาน</h1>
           <p className="text-xs md:text-sm text-gray-500 mt-1">
             บริษัท: {companyNameText || "ไม่พบข้อมูลบริษัท"} · แสดงเฉพาะข้อมูลพนักงานในบริษัทของคุณ
           </p>
@@ -263,10 +265,10 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                   </td>
                   <td className="p-4 text-center pr-6">
                     <div className="flex items-center justify-center gap-2">
-                      <Link href={`?docId=${emp.id}`} scroll={false} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-purple-600 border-purple-200 hover:bg-purple-600 hover:text-white transition-all shadow-sm">
+                      <Link href={`?docId=${emp.id}`} scroll={false} className="inline-flex min-h-10 items-center whitespace-nowrap rounded-lg border border-purple-200 bg-white px-3 py-1.5 text-[11px] font-bold text-purple-600 shadow-sm transition-all hover:bg-purple-600 hover:text-white">
                         ดูเอกสาร
                       </Link>
-                      <Link href={`/company-dashboard/employees/edit/${emp.id}`} className="px-3 py-1.5 text-[11px] font-bold rounded-lg border bg-white text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                      <Link href={`/company-dashboard/employees/edit/${emp.id}`} className="inline-flex min-h-10 items-center whitespace-nowrap rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-bold text-blue-600 shadow-sm transition-all hover:bg-blue-600 hover:text-white">
                         แก้ไข
                       </Link>
                     </div>
@@ -286,15 +288,15 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
       </div>
 
       {viewEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="ข้อมูลพนักงาน" className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
               <h2 className="text-xl font-bold text-gray-800">ข้อมูลพนักงาน</h2>
               <Link href="/company-dashboard" className="text-gray-400 hover:text-red-500 transition-colors p-2 bg-gray-50 hover:bg-red-50 rounded-lg">x</Link>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-6 text-sm custom-scrollbar">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="custom-scrollbar space-y-6 overflow-y-auto p-4 text-sm sm:p-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
                 <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                   <p className="text-xs font-bold text-gray-500 mb-1">รหัส</p>
                   <p className="font-bold text-lg text-blue-700">{viewEmployee.emp_code || "-"}</p>
@@ -358,18 +360,18 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
       )}
 
       {activeDocEmp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div role="dialog" aria-modal="true" aria-label="เอกสารแนบพนักงาน" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-purple-50">
               <h2 className="text-lg font-bold text-purple-800">เอกสารแนบของ {activeDocEmp.first_name_th || activeDocEmp.emp_code}</h2>
               <Link href="/company-dashboard" className="text-gray-400 hover:text-red-500 transition-colors">x</Link>
             </div>
-            <div className="p-6">
+            <div className="overflow-y-auto p-4 sm:p-6">
               {activeDocMainFileName && hasLegacyMainDocument(activeDocMainFileName) ? (
-                <div className="p-4 border border-gray-200 rounded-2xl flex justify-between items-center bg-white shadow-sm mb-4">
+                <div className="mb-4 flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
                   <div>
                     <p className="font-bold text-gray-800">Main Document</p>
-                    <p className="text-xs text-gray-500 mt-1">{activeDocMainFileName}</p>
+                    <p className="mt-1 break-all text-xs text-gray-500" title={activeDocMainFileName}>{activeDocMainFileName}</p>
                   </div>
                   <SecureDocumentButton viewUrl={documentHref(activeDocMainFileName)} className="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-xl hover:bg-blue-600 hover:text-white transition-colors shadow-sm">
                     เปิดดูไฟล์

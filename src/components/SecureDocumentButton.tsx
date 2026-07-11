@@ -42,6 +42,8 @@ export default function SecureDocumentButton({
 
   useEffect(() => {
     if (!popup) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -50,7 +52,10 @@ export default function SecureDocumentButton({
       }
     };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [popup]);
 
   async function openDocument() {
@@ -135,7 +140,7 @@ export default function SecureDocumentButton({
             aria-modal="true"
             aria-labelledby="secure-file-dialog-title"
             aria-describedby="secure-file-dialog-description"
-            className="w-full max-w-sm rounded-xl bg-white p-6 text-center shadow-2xl"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto break-words rounded-xl bg-white p-4 text-center shadow-2xl sm:p-6"
           >
             <h2 id="secure-file-dialog-title" className="text-lg font-extrabold text-gray-900">{popup.title}</h2>
             <p id="secure-file-dialog-description" className="mt-2 text-sm text-gray-600">{popup.message}</p>

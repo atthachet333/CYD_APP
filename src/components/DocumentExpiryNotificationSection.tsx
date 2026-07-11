@@ -21,13 +21,13 @@ export default function DocumentExpiryNotificationSection({
   const visibleItems = typeof limit === "number" ? items.slice(0, limit) : items;
 
   return (
-    <section className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-      <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-extrabold text-[#111c44]">แจ้งเตือนเอกสารใกล้หมดอายุ</h2>
+    <section className="mb-6 w-full min-w-0 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex min-w-0 flex-col gap-4 border-b border-gray-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <h2 className="break-words text-base font-extrabold text-[#111c44] sm:text-lg">แจ้งเตือนเอกสารใกล้หมดอายุ</h2>
           <p className="text-xs text-gray-500 font-medium mt-1">Passport, Visa, Work Permit และ 90 Days ที่เหลือไม่เกิน 30 วันหรือเลยกำหนดแล้ว</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+        <div className="grid w-full grid-cols-2 gap-2 text-center sm:grid-cols-3 lg:w-auto lg:grid-cols-5">
           {[
             ["ทั้งหมด", summary.total],
             ["30 วัน", summary.warning],
@@ -43,8 +43,8 @@ export default function DocumentExpiryNotificationSection({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm whitespace-nowrap">
+      <div className="w-full overflow-x-auto">
+        <table className="min-w-[760px] w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500 text-[12px]">
             <tr>
               <th className="p-4 font-bold">พนักงาน</th>
@@ -62,11 +62,11 @@ export default function DocumentExpiryNotificationSection({
 
               return (
               <tr key={`${item.employeeId}-${item.documentType}`} className="hover:bg-blue-50/20">
-                <td className="p-4">
-                  <div className="font-extrabold text-gray-800">{item.employeeName}</div>
-                  <div className="text-[11px] text-gray-400 font-bold">{item.emp_code || "-"}</div>
+                <td className="max-w-[220px] p-4">
+                  <div className="truncate font-extrabold text-gray-800" title={item.employeeName}>{item.employeeName}</div>
+                  <div className="truncate text-[11px] font-bold text-gray-400" title={item.emp_code || "-"}>{item.emp_code || "-"}</div>
                 </td>
-                <td className="p-4 text-gray-600">{item.companyName}</td>
+                <td className="max-w-[220px] truncate p-4 text-gray-600" title={item.companyName}>{item.companyName}</td>
                 <td className="p-4 font-bold text-gray-700">{item.documentLabel}</td>
                 <td className="p-4 text-gray-600">{item.dueDate}</td>
                 <td className="p-4 font-bold text-gray-700">{item.daysRemaining < 0 ? `เลย ${Math.abs(item.daysRemaining)} วัน` : `${item.daysRemaining} วัน`}</td>

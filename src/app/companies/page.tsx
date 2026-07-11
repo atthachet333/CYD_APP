@@ -27,7 +27,7 @@ export default async function CompaniesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-gray-50 p-4 sm:p-6 md:p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">จัดการบริษัท</h1>
         <p className="text-sm text-gray-500 mt-1">เพิ่มและดูรายชื่อบริษัททั้งหมดในระบบ</p>

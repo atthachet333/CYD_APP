@@ -82,13 +82,13 @@ export default async function PassportRenewalPage() {
   }));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-gray-50 p-3 sm:p-4 md:p-6 lg:p-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">แจ้งเตือนต่อพาสปอร์ต</h1>
+        <h1 className="break-words text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">แจ้งเตือนต่อพาสปอร์ต</h1>
         <p className="text-sm text-gray-500 mt-1">รายการหนังสือเดินทางที่ใกล้หมดอายุ และบันทึกการต่อเอกสารจากฐานข้อมูลจริง</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 lg:mb-8 xl:grid-cols-4">
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
           <div className="text-[13px] font-semibold text-gray-500 mb-2">ทั้งหมด</div>
           <div className="text-3xl font-bold text-[#0f2b6f]">{summary.total}</div>

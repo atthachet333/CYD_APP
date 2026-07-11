@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 
 // 👉 1. เพิ่ม { isOpen } ตรงนี้เพื่อรับคำสั่ง
-export default function Sidebar({ isOpen = true }: { isOpen?: boolean }) {
+export default function Sidebar({ isOpen = true, onNavigate }: { isOpen?: boolean; onNavigate?: () => void }) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter(); // เพิ่ม useRouter สำหรับเปลี่ยนหน้าภายในแอป
@@ -47,10 +47,10 @@ export default function Sidebar({ isOpen = true }: { isOpen?: boolean }) {
 
   return (
     // 👉 2. ใส่กลไกยืด-หด: ถ้า isOpen เป็นจริง ให้กว้าง w-64 ถ้าเป็นเท็จให้กว้าง w-0
-    <aside className={`bg-[#0f2b6f] text-white h-screen flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'w-64' : 'w-0'}`}>
+    <aside className={`flex h-full max-h-screen shrink-0 flex-col overflow-hidden bg-[#0f2b6f] text-white transition-all duration-300 ease-in-out ${isOpen ? 'w-64 max-w-full' : 'w-0'}`}>
 
       {/* 3. ล็อกกล่องด้านในไว้ที่ w-64 เสมอ เพื่อให้เมนูไม่บีบตัวเละ */}
-      <div className="w-64 flex-1 flex flex-col h-full">
+      <div className="flex h-full w-64 max-w-full flex-1 flex-col">
         <div className="p-4 border-b border-[#1a3a8f]/50">
           <div className="bg-[#1a3a8f] p-2.5 rounded-2xl flex items-center space-x-3 shadow-inner">
             <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shrink-0 p-1 shadow-sm">
@@ -78,7 +78,9 @@ export default function Sidebar({ isOpen = true }: { isOpen?: boolean }) {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`block px-4 py-2.5 rounded-lg text-sm transition-colors ${pathname === item.path ? 'bg-[#1a3a8f] font-bold' : 'hover:bg-[#1a3a8f]'
+                onClick={onNavigate}
+                title={item.name}
+                className={`block min-h-11 break-words rounded-lg px-4 py-2.5 text-sm leading-6 transition-colors ${pathname === item.path ? 'bg-[#1a3a8f] font-bold' : 'hover:bg-[#1a3a8f]'
                   }`}
               >
                 {item.name}
@@ -87,7 +89,7 @@ export default function Sidebar({ isOpen = true }: { isOpen?: boolean }) {
 
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-3 text-red-400 hover:text-white hover:bg-red-900/20 rounded-lg mt-4 font-bold text-sm transition-colors"
+            className="mt-4 min-h-11 w-full rounded-lg px-4 py-3 text-left text-sm font-bold text-red-400 transition-colors hover:bg-red-900/20 hover:text-white"
           >
             ออกจากระบบ
           </button>

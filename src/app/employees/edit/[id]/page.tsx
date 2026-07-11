@@ -34,7 +34,7 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
   };
 
   return (
-    <div className="font-sans text-gray-800 bg-[#f4f7fe] min-h-screen p-6 md:p-8">
+    <div className="min-h-screen bg-[#f4f7fe] p-4 font-sans text-gray-800 sm:p-6 md:p-8">
       
       {/* คลุมด้วย Container นี้เพื่อให้เนื้อหาทั้งหมดอยู่กึ่งกลางจอ */}
       <div className="max-w-5xl mx-auto">
@@ -157,7 +157,7 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
               </div>
 
               {/* 2. อัปโหลดไฟล์ 4 ช่อง */}
-              <div className="border border-blue-200 bg-blue-50/40 p-6 rounded-2xl mt-8">
+              <div className="mt-8 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-6">
                 <h3 className="font-extrabold text-[#111c44] mb-5 text-base">
                   อัปเดตเอกสารประจำตัวพนักงาน <span className="text-gray-500 text-sm font-normal">(อัปโหลดทับไฟล์เดิมได้เลย)</span>
                 </h3>
@@ -206,7 +206,7 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
               </div>
 
               {/* 3. ข้อมูลวันสำคัญ */}
-              <div className="border border-gray-200 p-6 rounded-2xl bg-gray-50/50 mt-8">
+              <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50/50 p-4 sm:p-6">
                 <h3 className="font-extrabold text-[#111c44] mb-5 text-base">ข้อมูลวันสำคัญ (แก้ไขเองได้)</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -280,7 +280,7 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
               </div>
 
               {/* 4. ปุ่ม Action บันทึก/ยกเลิก */}
-              <div className="pt-6 flex justify-end items-center mt-8 border-t border-gray-200">
+              <div className="mt-8 flex flex-col-reverse items-stretch justify-end gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:items-center">
                 
                 {/* 🟢 เรียกใช้งาน Component ปุ่มยกเลิกที่เราสร้างแยกไว้ */}
                 <BackButton />

@@ -29,9 +29,9 @@ export default async function CategoriesPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-gray-50 p-4 sm:p-6 md:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">หมวดหมู่เอกสาร</h1>
+        <h1 className="break-words text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">หมวดหมู่เอกสาร</h1>
         <p className="text-sm text-gray-500 mt-1">จัดการประเภทของเอกสารในระบบ</p>
       </div>
 
@@ -57,7 +57,8 @@ export default async function CategoriesPage() {
 
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <table className="w-full text-left text-sm text-gray-600">
+            <div className="overflow-x-auto">
+            <table className="min-w-[640px] w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-50 text-gray-700 border-b border-gray-100">
                 <tr>
                   <th className="px-6 py-4 font-semibold">ชื่อหมวดหมู่</th>
@@ -82,6 +83,7 @@ export default async function CategoriesPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>

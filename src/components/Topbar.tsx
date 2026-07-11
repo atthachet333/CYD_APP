@@ -30,11 +30,11 @@ export default function Topbar() {
   const displayRole = roleMap[user?.role] || user?.role;
 
   return (
-    <div className="flex justify-between items-center px-4 lg:px-6 py-3 bg-transparent">
-      <h1 className="text-lg lg:text-xl font-extrabold text-[#0f2b6f] tracking-wide">
+    <div className="flex min-w-0 items-center justify-between gap-4 bg-transparent px-4 py-3 lg:px-6">
+      <h1 className="min-w-0 truncate text-lg font-extrabold text-[#0f2b6f] lg:text-xl" title={title}>
         {title}
       </h1>
-      <div className="bg-white pl-2 pr-4 lg:pr-5 py-1.5 rounded-full shadow-sm border border-gray-100 flex items-center space-x-3 transition-colors hover:bg-gray-50 cursor-pointer">
+      <div className="flex max-w-[45%] shrink-0 cursor-pointer items-center gap-3 rounded-full border border-gray-100 bg-white py-1.5 pl-2 pr-4 shadow-sm transition-colors hover:bg-gray-50 lg:pr-5">
         <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 flex items-center justify-center shadow-sm">
           <img
             src="/profile-placeholder.png"
@@ -46,9 +46,9 @@ export default function Topbar() {
             }}
           />
         </div>
-        <div className="flex flex-col justify-center">
-          <span className="text-[#0f2b6f] font-extrabold text-[13px] lg:text-[14px] leading-none mb-1">{user?.name || "ผู้ใช้งาน"}</span>
-          <span className="text-[#64748b] text-[10px] font-medium leading-none">{displayRole}</span>
+        <div className="flex min-w-0 flex-col justify-center">
+          <span className="mb-1 truncate text-[13px] font-extrabold leading-none text-[#0f2b6f] lg:text-[14px]" title={user?.name}>{user?.name || "ผู้ใช้งาน"}</span>
+          <span className="truncate text-[10px] font-medium leading-none text-[#64748b]">{displayRole}</span>
         </div>
       </div>
     </div>

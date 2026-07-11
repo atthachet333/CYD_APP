@@ -6,7 +6,7 @@ export default async function RestorePage() {
   if (!session) redirect("/login");
 
   return (
-    <div className="font-sans text-gray-800 bg-[#f4f7fe] min-h-screen p-6 md:p-8">
+    <div className="mx-auto min-h-screen w-full max-w-screen-2xl bg-[#f4f7fe] p-4 font-sans text-gray-800 sm:p-6 md:p-8">
       <div className="flex justify-between items-end mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <div>
           <h1 className="text-2xl font-extrabold text-[#111c44]">กู้คืนข้อมูล (Restore)</h1>

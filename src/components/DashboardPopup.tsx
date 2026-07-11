@@ -15,13 +15,27 @@ export default function DashboardPopup() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
   // ถ้าถูกสั่งปิด ก็จะไม่แสดงอะไร
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f2b6f]/40 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f2b6f]/40 p-4 backdrop-blur-sm transition-all">
       {/* กล่อง Popup */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div role="dialog" aria-modal="true" aria-label="ประกาศจากระบบ" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-300">
         
         {/* ส่วนหัว Popup (สีน้ำเงินเข้มตามธีมระบบ) */}
         <div className="bg-[#1e3a8a] px-6 py-4 flex justify-between items-center text-white">
@@ -30,6 +44,8 @@ export default function DashboardPopup() {
             <h2 className="font-extrabold text-lg">ประกาศจากระบบ</h2>
           </div>
           <button 
+            type="button"
+            aria-label="ปิดประกาศ"
             onClick={() => setIsOpen(false)} 
             className="text-blue-200 hover:text-white transition-colors"
           >
@@ -46,6 +62,7 @@ export default function DashboardPopup() {
           
           {/* ปุ่มกดรับทราบ */}
           <button 
+            type="button"
             onClick={() => setIsOpen(false)} 
             className="w-full py-3 bg-[#4318FF] hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors"
           >

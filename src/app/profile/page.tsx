@@ -18,8 +18,8 @@ export default async function ProfilePage() {
   const style = roleStyles[role] || roleStyles.CUSTOMER;
 
   return (
-    <div className="font-sans min-h-[80vh] flex items-center justify-center bg-[#f4f7fe]">
-      <div className="bg-white p-10 rounded-[2.5rem] shadow-xl border border-gray-50 w-full max-w-md relative overflow-hidden text-center">
+    <div className="flex min-h-[80vh] items-center justify-center bg-[#f4f7fe] p-4 font-sans">
+      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-gray-50 bg-white p-6 text-center shadow-xl sm:p-10">
         
         {/* Background Pattern ด้านบน */}
         <div className={`absolute top-0 left-0 w-full h-32 ${style.color} opacity-90`}></div>
@@ -36,8 +36,8 @@ export default async function ProfilePage() {
         </div>
 
         {/* ข้อมูลโปรไฟล์ */}
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-1">{user?.name || "ไม่ระบุชื่อ"}</h1>
-        <p className="text-gray-500 font-medium mb-6">{user?.email || "ไม่มีอีเมลในระบบ"}</p>
+        <h1 className="mb-1 break-words text-xl font-extrabold text-gray-800 sm:text-3xl">{user?.name || "ไม่ระบุชื่อ"}</h1>
+        <p className="mb-6 break-all font-medium text-gray-500">{user?.email || "ไม่มีอีเมลในระบบ"}</p>
 
         {/* ป้ายแสดงสิทธิ์ (Role Badge) */}
         <div className="inline-block px-5 py-2.5 bg-gray-50 rounded-2xl border border-gray-100 mb-8">

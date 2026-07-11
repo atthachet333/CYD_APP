@@ -31,7 +31,7 @@ export default function DashboardStatCards({ data }: { data: any }) {
   return (
     <>
       {/* 4 กล่องสถิติ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
         {cards.map((item) => (
           <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-50 relative group transition-all hover:shadow-md">
             <div className="flex justify-between items-start">
@@ -62,8 +62,8 @@ export default function DashboardStatCards({ data }: { data: any }) {
       </div>
 
       {activeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f2b6f]/60 backdrop-blur-sm p-4 md:p-8">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f2b6f]/60 p-2 backdrop-blur-sm sm:p-4 md:p-8">
+          <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-in fade-in zoom-in duration-200 sm:max-h-[90dvh]">
             
             <div className="bg-[#1e3a8a] px-6 py-4 flex justify-between items-center text-white shrink-0">
               <h2 className="font-extrabold text-lg flex items-center gap-2">

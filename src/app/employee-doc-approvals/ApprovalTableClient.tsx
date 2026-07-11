@@ -75,6 +75,24 @@ export default function ApprovalTableClient() {
   const [reviseTarget, setReviseTarget] = useState<ApprovalItem | null>(null);
   const [reviseStatus, setReviseStatus] = useState("pending");
   const [reviseReason, setReviseReason] = useState("");
+  const hasOpenModal = Boolean(approveTarget || rejectTarget || reviseTarget);
+
+  useEffect(() => {
+    if (!hasOpenModal) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || submittingId !== null) return;
+      setApproveTarget(null);
+      setRejectTarget(null);
+      setReviseTarget(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [hasOpenModal, submittingId]);
 
   async function loadData() {
     setLoading(true);
@@ -192,14 +210,14 @@ export default function ApprovalTableClient() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/30">
-          <div className="flex gap-4 text-xs md:text-sm font-bold text-gray-400 overflow-x-auto w-full sm:w-auto">
+        <div className="flex flex-col items-stretch justify-between gap-4 border-b border-gray-50 bg-gray-50/30 p-4 sm:flex-row sm:items-center sm:p-5">
+          <div className="flex w-full gap-4 overflow-x-auto text-xs font-bold text-gray-400 sm:w-auto md:text-sm">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveStatus(tab.key)}
-                className={`pb-2 transition-colors ${activeStatus === tab.key ? "text-blue-600 border-b-2 border-blue-600" : "hover:text-gray-700"}`}
+                className={`min-h-10 shrink-0 whitespace-nowrap pb-2 transition-colors ${activeStatus === tab.key ? "text-blue-600 border-b-2 border-blue-600" : "hover:text-gray-700"}`}
               >
                 {tab.label}
               </button>
@@ -214,7 +232,7 @@ export default function ApprovalTableClient() {
           />
         </div>
 
-        {error && <div className="m-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
+        {error && <div className="m-4 break-words rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 sm:m-5">{error}</div>}
 
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left text-sm whitespace-nowrap min-w-[1120px]">
@@ -314,8 +332,8 @@ export default function ApprovalTableClient() {
       </div>
 
       {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
+          <div role="dialog" aria-modal="true" aria-label="ยืนยันการปฏิเสธ" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
             <h2 className="text-lg font-black text-gray-900 mb-2">ปฏิเสธคำขอ</h2>
             <p className="text-sm text-gray-500 mb-4">
               {rejectTarget.employeeName} - {DOC_LABELS[rejectTarget.documentType] || rejectTarget.documentType}
@@ -326,7 +344,7 @@ export default function ApprovalTableClient() {
               className="w-full min-h-28 rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
               placeholder="ระบุเหตุผลที่ปฏิเสธ"
             />
-            <div className="mt-5 flex justify-end gap-3">
+            <div className="mt-5 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
               <button type="button" onClick={() => setRejectTarget(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold">
                 ยกเลิก
               </button>
@@ -344,14 +362,14 @@ export default function ApprovalTableClient() {
       )}
 
       {approveTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
+          <div role="dialog" aria-modal="true" aria-label="ยืนยันการอนุมัติ" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
             <h2 className="text-lg font-black text-gray-900 mb-2">ยืนยันอนุมัติเอกสาร</h2>
             <p className="text-sm text-gray-500">
               {approveTarget.employeeName} - {DOC_LABELS[approveTarget.documentType] || approveTarget.documentType}
             </p>
             <p className="text-xs text-gray-400 mt-2">{approveTarget.requestNumber}</p>
-            <div className="mt-5 flex justify-end gap-3">
+            <div className="mt-5 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
               <button type="button" onClick={() => setApproveTarget(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold">
                 ยกเลิก
               </button>
@@ -369,8 +387,8 @@ export default function ApprovalTableClient() {
       )}
 
       {reviseTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
+          <div role="dialog" aria-modal="true" aria-label="แก้ไขผลการอนุมัติ" className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
             <h2 className="text-lg font-black text-gray-900 mb-2">แก้ไขผลการอนุมัติ</h2>
             <div className="space-y-1 text-sm text-gray-600 mb-4">
               <p><span className="font-bold text-gray-800">คำขอ:</span> {reviseTarget.requestNumber}</p>
@@ -399,7 +417,7 @@ export default function ApprovalTableClient() {
               className="w-full min-h-28 rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
               placeholder="ระบุเหตุผลทุกครั้ง"
             />
-            <div className="mt-5 flex justify-end gap-3">
+            <div className="mt-5 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
               <button type="button" onClick={() => setReviseTarget(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold">
                 ยกเลิก
               </button>

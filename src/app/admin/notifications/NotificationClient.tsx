@@ -66,7 +66,7 @@ export default function NotificationClient({ initialData }: { initialData: any[]
       {/* ตารางแสดงข้อมูลการแจ้งเตือน */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm whitespace-nowrap">
+          <table className="min-w-[820px] w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-[#f8fafc] text-gray-600 border-b border-gray-200 text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4 font-bold">หัวข้อการแจ้งเตือน</th>
