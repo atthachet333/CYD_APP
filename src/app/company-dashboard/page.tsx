@@ -44,6 +44,32 @@ function getWorkTypeName(id: number | null) {
   return "ไม่ระบุ";
 }
 
+function buildApprovalStatusMap(rows: any[]) {
+  const map = new Map<number, { pending: number; total: number }>();
+
+  for (const row of rows) {
+    if (!row.profile_id) continue;
+    const current = map.get(row.profile_id) || { pending: 0, total: 0 };
+    const count = row._count?._all || 0;
+    current.total += count;
+    if (String(row.status || "").toLowerCase() === "pending") current.pending += count;
+    map.set(row.profile_id, current);
+  }
+
+  return map;
+}
+
+function approvalStatusBadge(empId: number, approvalStatusMap: Map<number, { pending: number; total: number }>) {
+  const summary = approvalStatusMap.get(empId);
+  if (summary?.pending) {
+    return { text: "รออนุมัติเอกสาร", className: "bg-orange-50 text-orange-600 border border-orange-200" };
+  }
+  if (summary?.total) {
+    return { text: "ตรวจเอกสารแล้ว", className: "bg-green-50 text-green-600 border border-green-200" };
+  }
+  return { text: "รอต่อเอกสาร", className: "bg-orange-50 text-orange-600 border border-orange-200" };
+}
+
 const DOCUMENTS_ROOT = path.join(process.cwd(), "private_uploads", "employee_documents");
 const DOCUMENT_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 
@@ -141,6 +167,15 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
       orderBy: { created_at: "desc" },
     });
   }
+  const employeeIds = employees.map((emp) => emp.id);
+  const approvalStatusRows = employeeIds.length
+    ? await prisma.employee_document_approvals.groupBy({
+        by: ["profile_id", "status"],
+        where: { profile_id: { in: employeeIds } },
+        _count: { _all: true },
+      })
+    : [];
+  const approvalStatusMap = buildApprovalStatusMap(approvalStatusRows);
 
   const companyNameText = company?.company_name || dbUser?.full_name || "";
   const companyMap = new Map(company ? [[company.id, company.company_name]] : []);
@@ -188,7 +223,10 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {employees.map((emp) => (
+              {employees.map((emp) => {
+                const statusBadge = approvalStatusBadge(emp.id, approvalStatusMap);
+
+                return (
                 <tr key={emp.id} className="hover:bg-blue-50/30 transition-colors">
                   <td className="p-4 pl-6 font-bold text-[#0f2b6f] text-[13px]">{emp.emp_code || "-"}</td>
                   <td className="p-4">
@@ -221,8 +259,8 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                     </Link>
                   </td>
                   <td className="p-4 text-center">
-                    <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200 shadow-sm whitespace-nowrap">
-                      รอต่อเอกสาร
+                    <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold shadow-sm whitespace-nowrap ${statusBadge.className}`}>
+                      {statusBadge.text}
                     </span>
                   </td>
                   <td className="p-4 text-center pr-6">
@@ -236,7 +274,7 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
               {employees.length === 0 && (
                 <tr>
                   <td colSpan={7} className="p-10 text-center text-gray-400 font-medium bg-gray-50/50">

@@ -23,7 +23,7 @@ export const DOCUMENT_ALERT_FIELDS = [
 const DOCUMENTS_ROOT = path.join(process.cwd(), "private_uploads", "employee_documents");
 const DOCUMENT_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 
-function newDocumentFileExists(
+export function typedDocumentFileExists(
   emp: any,
   employeeId: number,
   documentType: DocumentType,
@@ -156,7 +156,7 @@ export function buildDocumentExpiryAlerts(
 
       summary[status]++;
       const employeeId = Number(emp.id);
-      const hasNewDocumentFile = newDocumentFileExists(emp, employeeId, field.documentType, field.fileField);
+      const hasNewDocumentFile = typedDocumentFileExists(emp, employeeId, field.documentType, field.fileField);
       const legacyFileName = safeLegacyFileName(emp.document_file_name);
       const hasLegacyFile = !hasNewDocumentFile && legacyFileName ? legacyDocumentFileExists(legacyFileName) : false;
       const source: DocumentAlertSource = hasNewDocumentFile ? "spx_document" : "legacy_main_document";

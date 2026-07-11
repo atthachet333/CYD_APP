@@ -18,6 +18,11 @@ const EMPLOYEE_DOCUMENTS_ROOT = path.join(
   "private_uploads",
   "employee_documents"
 );
+const PENDING_DOCUMENT_APPROVALS_ROOT = path.join(
+  process.cwd(),
+  "private_uploads",
+  "pending_document_approvals"
+);
 const MAX_EMPLOYEE_DOCUMENT_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EMPLOYEE_DOCUMENT_TYPES = new Set([
   "application/pdf",
@@ -31,6 +36,36 @@ const EMPLOYEE_DOCUMENT_FIELDS = [
   { field: "work_permit_document", legacyField: "work_permit_file", type: "work_permit", dbField: "work_permit_file" },
   { field: "ninety_day_document", legacyField: "ninety_day_file", type: "ninety_day", dbField: "ninety_day_file" },
 ] as const;
+const DOCUMENT_APPROVAL_FIELDS = [
+  {
+    field: "passport_document",
+    legacyField: "passport_file",
+    type: "passport",
+    numberField: "passport_number",
+    dateField: "passport_expiry_date",
+  },
+  {
+    field: "visa_document",
+    legacyField: "visa_file",
+    type: "visa",
+    numberField: "visa_number",
+    dateField: "visa_expiry_date",
+  },
+  {
+    field: "work_permit_document",
+    legacyField: "work_permit_file",
+    type: "work_permit",
+    numberField: "work_permit_number",
+    dateField: "work_permit_expiry_date",
+  },
+  {
+    field: "ninety_day_document",
+    legacyField: "ninety_day_file",
+    type: "ninety_day",
+    numberField: "ninety_day_number",
+    dateField: "ninety_day_report_date",
+  },
+] as const;
 
 function formValue(formData: FormData, key: string) {
   return formData.get(key) as string | null;
@@ -39,6 +74,11 @@ function formValue(formData: FormData, key: string) {
 function dateValue(formData: FormData, key: string) {
   const value = formValue(formData, key);
   return value ? new Date(value) : null;
+}
+
+function datePayloadValue(formData: FormData, key: string) {
+  const value = formValue(formData, key);
+  return value || null;
 }
 
 function jsonError(requestId: string, message: string, status: number) {
@@ -85,6 +125,71 @@ function validateEmployeeDocumentFile(file: File) {
 
 function employeeDocumentFile(formData: FormData, config: typeof EMPLOYEE_DOCUMENT_FIELDS[number]) {
   return (formData.get(config.field) || formData.get(config.legacyField)) as File | null;
+}
+
+function approvalDocumentFile(formData: FormData, config: typeof DOCUMENT_APPROVAL_FIELDS[number]) {
+  return (formData.get(config.field) || formData.get(config.legacyField)) as File | null;
+}
+
+function buildDocumentCreateApprovalRequests(formData: FormData) {
+  return DOCUMENT_APPROVAL_FIELDS.flatMap((config) => {
+    const file = approvalDocumentFile(formData, config);
+    const documentNumber = formValue(formData, config.numberField)?.trim() || null;
+    const expiryDate = datePayloadValue(formData, config.dateField);
+    const hasFile = Boolean(file && file.size > 0);
+
+    if (!hasFile && !documentNumber && !expiryDate) {
+      return [];
+    }
+
+    const ext = hasFile ? validateEmployeeDocumentFile(file as File) : null;
+
+    return [
+      {
+        type: config.type,
+        file: hasFile ? (file as File) : null,
+        payload: {
+          documentType: config.type,
+          operation: "create",
+          oldDocumentNumber: null,
+          newDocumentNumber: documentNumber,
+          oldExpiryDate: null,
+          newExpiryDate: expiryDate,
+          stagedFile: ext
+            ? {
+                hasFile: true,
+                ext,
+                extension: ext.slice(1),
+                mimeType: (file as File).type,
+                size: (file as File).size,
+              }
+            : null,
+        },
+      },
+    ];
+  });
+}
+
+async function stageApprovalDocumentFile({
+  file,
+  documentType,
+  approvalId,
+  requestId,
+}: {
+  file: File;
+  documentType: string;
+  approvalId: number;
+  requestId: string;
+}) {
+  const ext = validateEmployeeDocumentFile(file);
+  const uploadDir = path.join(PENDING_DOCUMENT_APPROVALS_ROOT, String(approvalId));
+  const finalFileName = `${documentType}${ext}`;
+  const filePath = path.join(uploadDir, finalFileName);
+  const tempPath = path.join(uploadDir, `.${finalFileName}.${requestId}.tmp`);
+
+  await mkdir(uploadDir, { recursive: true });
+  await writeFile(tempPath, Buffer.from(await file.arrayBuffer()));
+  await rename(tempPath, filePath);
 }
 
 async function saveEmployeeDocumentFile({
@@ -268,6 +373,7 @@ export async function POST(request: Request) {
     ).toUpperCase();
     const sessionCompanyId = dbUser?.company_id || (session.user as any)?.companyId;
     const isStaffUser = ["ADMIN", "STAFF", "SUPERADMIN"].includes(sessionRole);
+    const isCustomerCreate = !isStaffUser;
 
     if (!isStaffUser && Number(sessionCompanyId) !== Number(companyId)) {
       return jsonError(requestId, "Forbidden", 403);
@@ -386,13 +492,14 @@ export async function POST(request: Request) {
 
       healthcare_rights: healthcareRights,
 
-      passport_number: formValue(formData, "passport_number") || null,
-      passport_expiry_date: dateValue(formData, "passport_expiry_date"),
-      visa_number: formValue(formData, "visa_number") || null,
-      visa_expiry_date: dateValue(formData, "visa_expiry_date"),
-      work_permit_number: formValue(formData, "work_permit_number") || null,
-      work_permit_expiry_date: dateValue(formData, "work_permit_expiry_date"),
-      ninety_day_report_date: dateValue(formData, "ninety_day_report_date"),
+      passport_number: isCustomerCreate ? null : formValue(formData, "passport_number") || null,
+      passport_expiry_date: isCustomerCreate ? null : dateValue(formData, "passport_expiry_date"),
+      visa_number: isCustomerCreate ? null : formValue(formData, "visa_number") || null,
+      visa_expiry_date: isCustomerCreate ? null : dateValue(formData, "visa_expiry_date"),
+      work_permit_number: isCustomerCreate ? null : formValue(formData, "work_permit_number") || null,
+      work_permit_expiry_date: isCustomerCreate ? null : dateValue(formData, "work_permit_expiry_date"),
+      ninety_day_number: isCustomerCreate ? null : formValue(formData, "ninety_day_number") || null,
+      ninety_day_report_date: isCustomerCreate ? null : dateValue(formData, "ninety_day_report_date"),
 
       // ✅ ใช้เลขรันอัตโนมัติเป็นชื่อไฟล์เอกสาร
       document_file_name: fileNameToSave,
@@ -400,9 +507,80 @@ export async function POST(request: Request) {
 
     logDoc(requestId, "prisma create data", dataToCreate);
 
-    const created = await prisma.employee_document_profiles.create({
-      data: dataToCreate,
-    });
+    const approvalRequests = isCustomerCreate
+      ? buildDocumentCreateApprovalRequests(formData)
+      : [];
+    let created: any;
+    let createdApprovalRecords: any[] = [];
+
+    if (isCustomerCreate && approvalRequests.length > 0) {
+      const result = await prisma.$transaction(async (tx) => {
+        const employee = await tx.employee_document_profiles.create({
+          data: dataToCreate,
+        });
+        const approvals = [];
+
+        for (const approvalRequest of approvalRequests) {
+          approvals.push(
+            await tx.employee_document_approvals.create({
+              data: {
+                action_type: "DOCUMENT_CREATE",
+                profile_id: employee.id,
+                payload_json: JSON.stringify(approvalRequest.payload),
+                status: "pending",
+                requested_by: dbUser?.id || null,
+              },
+            })
+          );
+        }
+
+        return { employee, approvals };
+      });
+
+      created = result.employee;
+      createdApprovalRecords = result.approvals;
+
+      try {
+        for (let index = 0; index < approvalRequests.length; index++) {
+          const approvalRequest = approvalRequests[index];
+          const approval = createdApprovalRecords[index];
+
+          if (!approvalRequest.file) {
+            continue;
+          }
+
+          await stageApprovalDocumentFile({
+            file: approvalRequest.file,
+            documentType: approvalRequest.type,
+            approvalId: approval.id,
+            requestId,
+          });
+        }
+      } catch (stageError) {
+        await Promise.all(
+          createdApprovalRecords.map((approval) =>
+            rm(path.join(PENDING_DOCUMENT_APPROVALS_ROOT, String(approval.id)), {
+              recursive: true,
+              force: true,
+            }).catch(() => null)
+          )
+        );
+        await prisma
+          .$transaction([
+            prisma.employee_document_approvals.deleteMany({
+              where: { id: { in: createdApprovalRecords.map((approval) => approval.id) } },
+            }),
+            prisma.employee_document_profiles.delete({ where: { id: created.id } }),
+          ])
+          .catch(() => null);
+
+        throw stageError;
+      }
+    } else {
+      created = await prisma.employee_document_profiles.create({
+        data: dataToCreate,
+      });
+    }
 
     const employeeFolderName =
       safeEmployeeFolderName(created.emp_code || `employee-${created.id}`) ||
@@ -415,38 +593,58 @@ export async function POST(request: Request) {
     };
     const documentUpdateData: Record<string, string> = {};
 
-    for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
-      const documentFile = employeeDocumentFile(formData, config);
+    if (isStaffUser) {
+      for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
+        const documentFile = employeeDocumentFile(formData, config);
 
-      if (documentFile && documentFile.size > 0) {
-        validateEmployeeDocumentFile(documentFile);
-      }
-    }
-
-    for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
-      const documentFile = employeeDocumentFile(formData, config);
-
-      if (!documentFile || documentFile.size === 0) {
-        continue;
+        if (documentFile && documentFile.size > 0) {
+          validateEmployeeDocumentFile(documentFile);
+        }
       }
 
-      const relativePath = await saveEmployeeDocumentFile({
-        file: documentFile,
-        documentType: config.type,
-        employeeFolderName,
-        requestId,
-      });
+      for (const config of EMPLOYEE_DOCUMENT_FIELDS) {
+        const documentFile = employeeDocumentFile(formData, config);
 
-      documentUpdateData[config.dbField] = relativePath;
-      uploaded_documents[config.type] = true;
-    }
+        if (!documentFile || documentFile.size === 0) {
+          continue;
+        }
 
-    if (Object.keys(documentUpdateData).length > 0) {
-      await prisma.employee_document_profiles.update({
-        where: { id: created.id },
-        data: documentUpdateData,
-      });
+        const relativePath = await saveEmployeeDocumentFile({
+          file: documentFile,
+          documentType: config.type,
+          employeeFolderName,
+          requestId,
+        });
+
+        documentUpdateData[config.dbField] = relativePath;
+        uploaded_documents[config.type] = true;
+      }
+
+      if (Object.keys(documentUpdateData).length > 0) {
+        await prisma.employee_document_profiles.update({
+          where: { id: created.id },
+          data: documentUpdateData,
+        });
+      }
     }
+    const approval_requests = createdApprovalRecords.map((approval, index) => ({
+      id: approval.id,
+      documentType: approvalRequests[index]?.type || null,
+      status: approval.status,
+      hasFile: Boolean(approvalRequests[index]?.file),
+    }));
+    const staged_documents = approvalRequests.reduce(
+      (result, approvalRequest) => ({
+        ...result,
+        [approvalRequest.type]: Boolean(approvalRequest.file),
+      }),
+      {
+        passport: false,
+        visa: false,
+        work_permit: false,
+        ninety_day: false,
+      }
+    );
 
     logDoc(requestId, "prisma created", {
       id: created.id,
@@ -454,6 +652,7 @@ export async function POST(request: Request) {
       document_file_name: created.document_file_name,
       healthcare_rights: healthcareRights,
       uploaded_documents,
+      approval_requests: approval_requests.length,
     });
 
     logDoc(requestId, "CREATE_EMPLOYEE END", {
@@ -468,6 +667,8 @@ export async function POST(request: Request) {
       document_file_name: created.document_file_name,
       healthcare_rights: healthcareRights,
       uploaded_documents,
+      staged_documents,
+      approval_requests,
       requestId,
     });
   } catch (error: any) {

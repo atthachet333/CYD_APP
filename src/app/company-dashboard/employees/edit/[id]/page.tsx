@@ -52,7 +52,7 @@ export default async function SpxEmployeeEditPage({ params }: { params: Promise<
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 md:p-8">
-            <ApiActionForm endpoint="/api/employee/update" redirectTo="/company-dashboard" className="space-y-6 text-sm" successMessage="แก้ไขสำเร็จ">
+            <ApiActionForm endpoint="/api/document-approvals/request" redirectTo="/company-dashboard" className="space-y-6 text-sm" successMessage="ส่งคำขอเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบตรวจสอบ">
               <input type="hidden" name="id" value={employee.id} />
 
               <div>
@@ -108,7 +108,7 @@ export default async function SpxEmployeeEditPage({ params }: { params: Promise<
               <div className="pt-6 flex justify-end items-center border-t border-gray-200">
                 <BackButton />
                 <button type="submit" className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition">
-                  บันทึกการแก้ไข
+                  ส่งคำขออนุมัติ
                 </button>
               </div>
             </ApiActionForm>

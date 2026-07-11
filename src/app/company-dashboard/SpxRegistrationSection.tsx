@@ -49,7 +49,11 @@ export default function SpxRegistrationSection({
       try { data = text ? JSON.parse(text) : null; } catch (error) {}
 
       if (response.ok && data?.ok !== false) {
-        alert("บันทึกข้อมูลและอัปโหลดไฟล์สำเร็จ!");
+        if (data?.approval_requests?.length > 0) {
+          alert("สร้างพนักงานและส่งคำขออนุมัติเอกสารแล้ว");
+        } else {
+          alert("บันทึกข้อมูลพนักงานสำเร็จ!");
+        }
         setIsOpen(false);
         window.location.reload();
       } else {

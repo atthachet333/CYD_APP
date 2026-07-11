@@ -1,0 +1,192 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import SecureDocumentButton from "@/components/SecureDocumentButton";
+
+type EmployeeRow = {
+  id: number;
+  emp_code: string | null;
+  employeeName: string;
+  passport_number: string | null;
+  passport_no: string | null;
+  passport_expiry_date: string | null;
+  has_passport_file: boolean;
+};
+
+function formatThaiDate(value: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function toInputDate(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
+function daysRemaining(value: string | null) {
+  if (!value) return null;
+  const target = new Date(value);
+  if (Number.isNaN(target.getTime())) return null;
+  target.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / 86400000);
+}
+
+function statusFor(value: string | null) {
+  const days = daysRemaining(value);
+  if (days === null) return { label: "ยังไม่มีข้อมูล", color: "bg-gray-100 text-gray-600", daysText: "-" };
+  if (days < 0) return { label: "หมดอายุแล้ว", color: "bg-red-100 text-red-700", daysText: `ผ่านมาแล้ว ${Math.abs(days)} วัน` };
+  if (days <= 7) return { label: "ใกล้หมดอายุ", color: "bg-orange-100 text-orange-700", daysText: `เหลืออีก ${days} วัน` };
+  return { label: "ปกติ", color: "bg-green-100 text-green-700", daysText: `เหลืออีก ${days} วัน` };
+}
+
+function passportNumber(employee: EmployeeRow) {
+  return employee.passport_number || employee.passport_no || "";
+}
+
+export default function PassportRenewalClient({ employees }: { employees: EmployeeRow[] }) {
+  const router = useRouter();
+  const [activeEmployee, setActiveEmployee] = useState<EmployeeRow | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function submit(formData: FormData) {
+    setSubmitting(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch("/api/document-renewals", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "บันทึกการต่อพาสปอร์ตไม่สำเร็จ");
+      setSuccess("บันทึกการต่อพาสปอร์ตสำเร็จ");
+      setActiveEmployee(null);
+      router.refresh();
+    } catch (err: any) {
+      setError(err?.message || "บันทึกการต่อพาสปอร์ตไม่สำเร็จ");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+          <h3 className="font-bold text-gray-800">รายการที่ต้องดำเนินการ</h3>
+        </div>
+        {error && <div className="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
+        {success && <div className="m-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-700">{success}</div>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600 min-w-[1080px]">
+            <thead className="bg-white text-gray-500 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4 font-semibold">ชื่อ-นามสกุล</th>
+                <th className="px-6 py-4 font-semibold">รหัสพนักงาน</th>
+                <th className="px-6 py-4 font-semibold">เลข Passport</th>
+                <th className="px-6 py-4 font-semibold text-center">วันหมดอายุ</th>
+                <th className="px-6 py-4 font-semibold text-center">เวลาที่เหลือ</th>
+                <th className="px-6 py-4 font-semibold text-center">สถานะ</th>
+                <th className="px-6 py-4 font-semibold text-center">ไฟล์</th>
+                <th className="px-6 py-4 font-semibold text-center">ดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {employees.map((employee) => {
+                const status = statusFor(employee.passport_expiry_date);
+                return (
+                  <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-gray-900">{employee.employeeName}</td>
+                    <td className="px-6 py-4 font-mono text-gray-500">{employee.emp_code || "-"}</td>
+                    <td className="px-6 py-4 font-mono text-gray-500">{passportNumber(employee) || "-"}</td>
+                    <td className="px-6 py-4 text-center font-mono">{formatThaiDate(employee.passport_expiry_date)}</td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-700">{status.daysText}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.color}`}>{status.label}</span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {employee.has_passport_file ? (
+                        <SecureDocumentButton employeeId={employee.id} documentType="passport" className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100">
+                          เปิดดูไฟล์
+                        </SecureDocumentButton>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-400 text-xs font-bold">ยังไม่มีไฟล์</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError("");
+                          setSuccess("");
+                          setActiveEmployee(employee);
+                        }}
+                        className="inline-flex min-w-[170px] items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:bg-blue-100"
+                      >
+                        ดำเนินการต่อพาสปอร์ต
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {employees.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-400">ไม่พบข้อมูลพนักงาน</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {activeEmployee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <form
+            className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit(new FormData(event.currentTarget));
+            }}
+          >
+            <h2 className="text-lg font-black text-gray-900 mb-2">บันทึกการต่อพาสปอร์ต</h2>
+            <div className="mb-4 space-y-1 text-sm text-gray-600">
+              <p><span className="font-bold text-gray-800">พนักงาน:</span> {activeEmployee.employeeName}</p>
+              <p><span className="font-bold text-gray-800">รหัส:</span> {activeEmployee.emp_code || "-"}</p>
+              <p><span className="font-bold text-gray-800">เลขเดิม:</span> {passportNumber(activeEmployee) || "-"}</p>
+              <p><span className="font-bold text-gray-800">วันเดิม:</span> {formatThaiDate(activeEmployee.passport_expiry_date)}</p>
+              {activeEmployee.has_passport_file && (
+                <SecureDocumentButton employeeId={activeEmployee.id} documentType="passport" className="mt-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100">
+                  ดูไฟล์เดิม
+                </SecureDocumentButton>
+              )}
+            </div>
+            <input type="hidden" name="employeeId" value={activeEmployee.id} />
+            <input type="hidden" name="documentType" value="passport" />
+            <label className="block text-xs font-bold text-gray-500 mb-1">เลข Passport ใหม่</label>
+            <input name="documentNumber" defaultValue={passportNumber(activeEmployee)} className="mb-3 w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <label className="block text-xs font-bold text-gray-500 mb-1">วันหมดอายุใหม่</label>
+            <input type="date" name="expiryDate" required defaultValue={toInputDate(activeEmployee.passport_expiry_date)} className="mb-3 w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <label className="block text-xs font-bold text-gray-500 mb-1">ไฟล์ Passport ใหม่</label>
+            <input type="file" name="passport_document" accept=".pdf,.png,.jpg,.jpeg,.webp" className="mb-3 w-full rounded-xl border border-gray-200 p-3 text-sm" />
+            <label className="block text-xs font-bold text-gray-500 mb-1">หมายเหตุ</label>
+            <textarea name="note" className="min-h-24 w-full rounded-xl border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" disabled={submitting} onClick={() => setActiveEmployee(null)} className="px-4 py-2 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold disabled:opacity-50">
+                ยกเลิก
+              </button>
+              <button type="submit" disabled={submitting} className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold disabled:opacity-50">
+                {submitting ? "กำลังบันทึก..." : "บันทึกการต่อพาสปอร์ต"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </>
+  );
+}
