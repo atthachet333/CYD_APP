@@ -8,10 +8,10 @@ type EmployeeRow = {
   id: number;
   emp_code: string | null;
   employeeName: string;
-  passport_number: string | null;
-  passport_no: string | null;
-  passport_expiry_date: string | null;
-  has_passport_file: boolean;
+  visa_number: string | null;
+  visa_no: string | null;
+  visa_expiry_date: string | null;
+  has_visa_file: boolean;
 };
 
 const missing = <span className="text-slate-300">-</span>;
@@ -44,39 +44,18 @@ function statusFor(value: string | null) {
   const days = daysRemaining(value);
   const base = "inline-flex min-w-[104px] items-center justify-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold";
 
-  if (days === null) {
-    return {
-      label: "ยังไม่มีข้อมูล",
-      className: `${base} bg-slate-100 text-slate-500`,
-      daysText: null,
-    };
-  }
-  if (days < 0) {
-    return {
-      label: "หมดอายุแล้ว",
-      className: `${base} bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200`,
-      daysText: `ผ่านมาแล้ว ${Math.abs(days)} วัน`,
-    };
-  }
-  if (days <= 7) {
-    return {
-      label: "ใกล้หมดอายุ",
-      className: `${base} bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200`,
-      daysText: `เหลืออีก ${days} วัน`,
-    };
-  }
-  return {
-    label: "ปกติ",
-    className: `${base} bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200`,
-    daysText: `เหลืออีก ${days} วัน`,
-  };
+  if (days === null) return { label: "ยังไม่มีข้อมูล", className: `${base} bg-slate-100 text-slate-500`, daysText: null };
+  if (days < 0) return { label: "เกินกำหนด", className: `${base} bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200`, daysText: `ผ่านมาแล้ว ${Math.abs(days)} วัน` };
+  if (days <= 7) return { label: "ด่วนมาก", className: `${base} bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200`, daysText: `เหลืออีก ${days} วัน` };
+  if (days <= 30) return { label: "ใกล้หมดอายุ", className: `${base} bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200`, daysText: `เหลืออีก ${days} วัน` };
+  return { label: "ปกติ", className: `${base} bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200`, daysText: `เหลืออีก ${days} วัน` };
 }
 
-function passportNumber(employee: EmployeeRow) {
-  return employee.passport_number || employee.passport_no || "";
+function visaNumber(employee: EmployeeRow) {
+  return employee.visa_number || employee.visa_no || "";
 }
 
-export default function PassportRenewalClient({ employees }: { employees: EmployeeRow[] }) {
+export default function VisaRenewalClient({ employees }: { employees: EmployeeRow[] }) {
   const router = useRouter();
   const [activeEmployee, setActiveEmployee] = useState<EmployeeRow | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -90,12 +69,12 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
     try {
       const res = await fetch("/api/document-renewals", { method: "POST", body: formData });
       const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || "บันทึกการต่อพาสปอร์ตไม่สำเร็จ");
-      setSuccess("บันทึกการต่อพาสปอร์ตสำเร็จ");
+      if (!res.ok || !data?.ok) throw new Error(data?.error || "บันทึกการต่อวีซ่าไม่สำเร็จ");
+      setSuccess("บันทึกการต่อวีซ่าสำเร็จ");
       setActiveEmployee(null);
       router.refresh();
     } catch (err: any) {
-      setError(err?.message || "บันทึกการต่อพาสปอร์ตไม่สำเร็จ");
+      setError(err?.message || "บันทึกการต่อวีซ่าไม่สำเร็จ");
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +94,7 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
               <tr>
                 <th className="min-w-[200px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">ชื่อ-นามสกุล</th>
                 <th className="min-w-[140px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">รหัสพนักงาน</th>
-                <th className="min-w-[140px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">เลข Passport</th>
+                <th className="min-w-[140px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">เลขวีซ่า</th>
                 <th className="min-w-[130px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">วันหมดอายุ</th>
                 <th className="min-w-[120px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">เวลาที่เหลือ</th>
                 <th className="min-w-[130px] px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">สถานะ</th>
@@ -125,9 +104,9 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
             </thead>
             <tbody>
               {employees.map((employee) => {
-                const status = statusFor(employee.passport_expiry_date);
-                const number = passportNumber(employee);
-                const expiryDate = formatThaiDate(employee.passport_expiry_date);
+                const status = statusFor(employee.visa_expiry_date);
+                const number = visaNumber(employee);
+                const expiryDate = formatThaiDate(employee.visa_expiry_date);
                 return (
                   <tr key={employee.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
                     <td className="px-5 py-4 align-middle text-sm text-slate-700">
@@ -150,10 +129,10 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
                       <span className={status.className}>{status.label}</span>
                     </td>
                     <td className="px-5 py-4 text-center align-middle">
-                      {employee.has_passport_file ? (
+                      {employee.has_visa_file ? (
                         <SecureDocumentButton
                           employeeId={employee.id}
-                          documentType="passport"
+                          documentType="visa"
                           className="inline-flex min-w-[92px] items-center justify-center rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100 transition hover:bg-blue-100"
                         >
                           เปิดดูไฟล์
@@ -174,7 +153,7 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
                         }}
                         className="inline-flex min-w-[124px] items-center justify-center whitespace-nowrap rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        ต่อพาสปอร์ต
+                        ต่อวีซ่า
                       </button>
                     </td>
                   </tr>
@@ -185,7 +164,7 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
                   <td colSpan={8} className="border-t border-slate-100">
                     <div className="py-16 text-center">
                       <p className="text-sm font-semibold text-slate-500">ไม่มีรายการพนักงาน</p>
-                      <p className="mt-1 text-xs text-slate-400">ยังไม่มีข้อมูลสำหรับดำเนินการต่อพาสปอร์ต</p>
+                      <p className="mt-1 text-xs text-slate-400">ยังไม่มีข้อมูลสำหรับดำเนินการต่อวีซ่า</p>
                     </div>
                   </td>
                 </tr>
@@ -206,13 +185,13 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
           >
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Passport Renewal</p>
-                <h2 className="mt-1 text-xl font-black text-slate-900">บันทึกการต่อพาสปอร์ต</h2>
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Visa Renewal</p>
+                <h2 className="mt-1 text-xl font-black text-slate-900">บันทึกการต่อวีซ่า</h2>
               </div>
-              {activeEmployee.has_passport_file && (
+              {activeEmployee.has_visa_file && (
                 <SecureDocumentButton
                   employeeId={activeEmployee.id}
-                  documentType="passport"
+                  documentType="visa"
                   className="inline-flex min-w-[92px] items-center justify-center rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100 transition hover:bg-blue-100"
                 >
                   ดูไฟล์เดิม
@@ -223,27 +202,28 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
             <div className="mb-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600 sm:grid-cols-2">
               <p><span className="font-bold text-slate-800">พนักงาน:</span> {activeEmployee.employeeName}</p>
               <p><span className="font-bold text-slate-800">รหัส:</span> {activeEmployee.emp_code || "-"}</p>
-              <p><span className="font-bold text-slate-800">เลขเดิม:</span> {passportNumber(activeEmployee) || "-"}</p>
-              <p><span className="font-bold text-slate-800">วันเดิม:</span> {formatThaiDate(activeEmployee.passport_expiry_date) || "-"}</p>
+              <p><span className="font-bold text-slate-800">เลขเดิม:</span> {visaNumber(activeEmployee) || "-"}</p>
+              <p><span className="font-bold text-slate-800">วันเดิม:</span> {formatThaiDate(activeEmployee.visa_expiry_date) || "-"}</p>
+              <p><span className="font-bold text-slate-800">สถานะเดิม:</span> {statusFor(activeEmployee.visa_expiry_date).label}</p>
             </div>
 
             <input type="hidden" name="employeeId" value={activeEmployee.id} />
-            <input type="hidden" name="documentType" value="passport" />
+            <input type="hidden" name="documentType" value="visa" />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-bold text-slate-700">เลข Passport ใหม่</span>
-                <input name="documentNumber" defaultValue={passportNumber(activeEmployee)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <span className="mb-1.5 block text-sm font-bold text-slate-700">เลขวีซ่าใหม่</span>
+                <input name="documentNumber" defaultValue={visaNumber(activeEmployee)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-sm font-bold text-slate-700">วันหมดอายุใหม่</span>
-                <input type="date" name="expiryDate" required defaultValue={toInputDate(activeEmployee.passport_expiry_date)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                <input type="date" name="expiryDate" required defaultValue={toInputDate(activeEmployee.visa_expiry_date)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
               </label>
             </div>
 
             <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-bold text-slate-700">ไฟล์ Passport ใหม่</span>
-              <input type="file" name="passport_document" accept=".pdf,.png,.jpg,.jpeg,.webp" className="h-11 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <span className="mb-1.5 block text-sm font-bold text-slate-700">ไฟล์ Visa ใหม่</span>
+              <input type="file" name="visa_document" accept=".pdf,.png,.jpg,.jpeg,.webp" className="h-11 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             </label>
 
             <label className="mt-4 block">
@@ -256,7 +236,7 @@ export default function PassportRenewalClient({ employees }: { employees: Employ
                 ยกเลิก
               </button>
               <button type="submit" disabled={submitting} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50">
-                {submitting ? "กำลังบันทึก..." : "บันทึกการต่อพาสปอร์ต"}
+                {submitting ? "กำลังบันทึก..." : "บันทึกการต่อวีซ่า"}
               </button>
             </div>
           </form>

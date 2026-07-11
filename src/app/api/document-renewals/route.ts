@@ -20,6 +20,22 @@ const DOCUMENT_CONFIG = {
     fileField: "passport_file",
     action: "PASSPORT_RENEWED",
   },
+  visa: {
+    storageName: "visa",
+    fileInputName: "visa_document",
+    numberField: "visa_number",
+    dateField: "visa_expiry_date",
+    fileField: "visa_file",
+    action: "VISA_RENEWED",
+  },
+  work_permit: {
+    storageName: "work_permit",
+    fileInputName: "work_permit_document",
+    numberField: "work_permit_number",
+    dateField: "work_permit_expiry_date",
+    fileField: "work_permit_file",
+    action: "WORK_PERMIT_RENEWED",
+  },
   ninety_day: {
     storageName: "ninety_day",
     fileInputName: "ninety_day_document",
@@ -59,7 +75,7 @@ async function currentUser(session: any) {
   });
 }
 
-async function saveDocumentFile(file: File, employee: any, requestId: string, storageName: "passport" | "ninety_day") {
+async function saveDocumentFile(file: File, employee: any, requestId: string, storageName: "passport" | "visa" | "work_permit" | "ninety_day") {
   const validation = validateFile(file);
   if (validation.error || !validation.ext) throw new Error(validation.error || "Invalid file");
 
