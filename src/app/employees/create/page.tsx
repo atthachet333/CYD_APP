@@ -6,7 +6,8 @@ import ApiActionForm from "./ApiActionForm";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 function documentHref(documentFileName: string) {
-  return `/api/documents/${encodeURIComponent(documentFileName)}`;
+  const filename = documentFileName.split(/[\\/]/).pop() || "";
+  return filename ? `/api/documents/${encodeURIComponent(filename)}` : "";
 }
 
 // ✅ ฟังก์ชันแปลงวันที่ให้อ่านง่าย (ถ้าไม่มีข้อมูลให้แสดงว่า "ไม่ได้ระบุ")
@@ -516,7 +517,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                     <p className="font-bold text-gray-800">Main Document</p>
                     <p className="text-xs text-gray-500 mt-1">{activeDocEmp.document_file_name}</p>
                   </div>
-                  <a href={documentHref(activeDocEmp.document_file_name)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</a>
+                  <SecureDocumentButton viewUrl={documentHref(activeDocEmp.document_file_name)} className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

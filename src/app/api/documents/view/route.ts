@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   const employee = await findEmployee(employeeId);
 
   if (!employee) {
-    return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
   }
 
   const user = await currentUser(session);
@@ -87,13 +87,13 @@ export async function GET(request: NextRequest) {
   const ext = path.extname(storedFileName);
 
   if (!ext || path.parse(storedFileName).name !== documentConfig.fileBase) {
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
   }
 
   const filePath = path.join(DOCUMENTS_ROOT, employeeFolder, `${documentConfig.fileBase}${ext}`);
 
   if (!fs.existsSync(filePath)) {
-    return NextResponse.json({ error: "File not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
   }
 
   const fileBuffer = fs.readFileSync(filePath);

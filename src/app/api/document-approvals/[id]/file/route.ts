@@ -47,18 +47,18 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
   if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ ok: false, error: "Invalid approval id" }, { status: 400 });
 
   const approval = await prisma.employee_document_approvals.findUnique({ where: { id } });
-  if (!approval) return NextResponse.json({ ok: false, error: "Approval request not found" }, { status: 404 });
+  if (!approval) return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
 
   const payload = parsePayload(approval.payload_json);
   const documentType = String(payload.documentType || "").toLowerCase();
   const ext = String(payload.stagedFile?.ext || "").toLowerCase();
   if (!["passport", "visa", "work_permit", "ninety_day"].includes(documentType) || ![".pdf", ".png", ".jpg", ".jpeg", ".webp"].includes(ext)) {
-    return NextResponse.json({ ok: false, error: "File not found" }, { status: 404 });
+    return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
   }
 
   const fileName = `${documentType}${ext}`;
   const filePath = path.join(PENDING_ROOT, String(id), fileName);
-  if (!fs.existsSync(filePath)) return NextResponse.json({ ok: false, error: "File not found" }, { status: 404 });
+  if (!fs.existsSync(filePath)) return NextResponse.json({ ok: false, message: "ไม่พบไฟล์เอกสาร" }, { status: 404 });
 
   return new NextResponse(fs.readFileSync(filePath), {
     headers: {

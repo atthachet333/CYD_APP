@@ -257,17 +257,17 @@ export default function ApprovalTableClient() {
                   <td className="p-4 text-gray-500">{formatDate(item.requestedAt)}</td>
                   <td className="p-4 text-center">
                     {item.hasStagedFile && item.viewUrl ? (
-                      <a href={item.viewUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors">
+                      <SecureDocumentButton viewUrl={item.viewUrl} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors">
                         ไฟล์ใหม่
-                      </a>
+                      </SecureDocumentButton>
                     ) : item.hasFile && item.employeeId && DOC_LABELS[item.documentType] ? (
                       <SecureDocumentButton employeeId={item.employeeId} documentType={item.documentType as any} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors">
                         ไฟล์เดิม
                       </SecureDocumentButton>
                     ) : item.hasFile && item.viewUrl ? (
-                      <a href={item.viewUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors">
+                      <SecureDocumentButton viewUrl={item.viewUrl} className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-600 hover:text-white transition-colors">
                         เปิดดูไฟล์
-                      </a>
+                      </SecureDocumentButton>
                     ) : (
                       <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-400 text-xs font-bold">ยังไม่มีไฟล์</span>
                     )}

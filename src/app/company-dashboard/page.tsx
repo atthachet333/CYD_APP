@@ -19,10 +19,8 @@ interface PageProps {
 }
 
 function documentHref(documentFileName: string) {
-  if (/^https?:\/\//i.test(documentFileName) || documentFileName.startsWith("/")) {
-    return documentFileName;
-  }
-  return `/api/documents/${encodeURIComponent(documentFileName)}`;
+  const filename = documentFileName.split(/[\\/]/).pop() || "";
+  return filename ? `/api/documents/${encodeURIComponent(filename)}` : "";
 }
 
 function formatThaiDate(dateValue: Date | string | null | undefined) {
@@ -373,9 +371,9 @@ export default async function CompanyDashboardPage({ searchParams }: PageProps) 
                     <p className="font-bold text-gray-800">Main Document</p>
                     <p className="text-xs text-gray-500 mt-1">{activeDocMainFileName}</p>
                   </div>
-                  <a href={documentHref(activeDocMainFileName)} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-xl hover:bg-blue-600 hover:text-white transition-colors shadow-sm">
+                  <SecureDocumentButton viewUrl={documentHref(activeDocMainFileName)} className="px-4 py-2 bg-blue-50 text-blue-600 text-xs font-bold rounded-xl hover:bg-blue-600 hover:text-white transition-colors shadow-sm">
                     เปิดดูไฟล์
-                  </a>
+                  </SecureDocumentButton>
                 </div>
               ) : null}
 

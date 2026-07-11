@@ -35,6 +35,7 @@ function jsonError(
     {
       ok: false,
       error,
+      message: status === 404 ? "ไม่พบไฟล์เอกสาร" : error,
       requestId,
       ...extra,
     },

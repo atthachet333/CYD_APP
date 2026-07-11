@@ -81,9 +81,9 @@ export default function DocumentExpiryNotificationSection({
                       เปิดดูไฟล์
                     </SecureDocumentButton>
                   ) : hasFile && item.viewUrl ? (
-                    <a href={item.viewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex bg-[#eff6ff] text-[#2563eb] px-4 py-2 rounded-xl text-[12px] font-extrabold hover:bg-blue-100 transition-colors">
+                    <SecureDocumentButton viewUrl={item.viewUrl} className="inline-flex bg-[#eff6ff] text-[#2563eb] px-4 py-2 rounded-xl text-[12px] font-extrabold hover:bg-blue-100 transition-colors">
                       เน€เธเธดเธ”เธ”เธนเนเธเธฅเน
-                    </a>
+                    </SecureDocumentButton>
                   ) : (
                     <span className="inline-flex px-3 py-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-500 text-[11px] font-extrabold">
                       ยังไม่มีไฟล์
