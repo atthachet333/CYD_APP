@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 
 type EmployeeRow = {
@@ -14,12 +14,10 @@ type EmployeeRow = {
   has_visa_file: boolean;
 };
 
-const missing = <span className="text-slate-300">-</span>;
-
 function formatThaiDate(value: string | null) {
-  if (!value) return null;
+  if (!value) return "-";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
 }
 
@@ -42,13 +40,11 @@ function daysRemaining(value: string | null) {
 
 function statusFor(value: string | null) {
   const days = daysRemaining(value);
-  const base = "inline-flex min-w-[104px] items-center justify-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold";
-
-  if (days === null) return { label: "ยังไม่มีข้อมูล", className: `${base} bg-slate-100 text-slate-500`, daysText: null };
-  if (days < 0) return { label: "เกินกำหนด", className: `${base} bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200`, daysText: `ผ่านมาแล้ว ${Math.abs(days)} วัน` };
-  if (days <= 7) return { label: "ด่วนมาก", className: `${base} bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200`, daysText: `เหลืออีก ${days} วัน` };
-  if (days <= 30) return { label: "ใกล้หมดอายุ", className: `${base} bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200`, daysText: `เหลืออีก ${days} วัน` };
-  return { label: "ปกติ", className: `${base} bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200`, daysText: `เหลืออีก ${days} วัน` };
+  if (days === null) return { label: "ยังไม่มีข้อมูล", color: "bg-gray-100 text-gray-600", daysText: "-" };
+  if (days < 0) return { label: "เกินกำหนด", color: "bg-red-100 text-red-700", daysText: `ผ่านมาแล้ว ${Math.abs(days)} วัน` };
+  if (days <= 7) return { label: "ด่วนมาก", color: "bg-orange-100 text-orange-700", daysText: `เหลืออีก ${days} วัน` };
+  if (days <= 30) return { label: "ใกล้หมดอายุ", color: "bg-amber-100 text-amber-700", daysText: `เหลืออีก ${days} วัน` };
+  return { label: "ปกติ", color: "bg-green-100 text-green-700", daysText: `เหลืออีก ${days} วัน` };
 }
 
 function visaNumber(employee: EmployeeRow) {
@@ -62,6 +58,18 @@ export default function VisaRenewalClient({ employees }: { employees: EmployeeRo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // ✅ State สำหรับระบบ Filter
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // ✅ State สำหรับ Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   useEffect(() => {
     if (!activeEmployee) return;
@@ -95,70 +103,135 @@ export default function VisaRenewalClient({ employees }: { employees: EmployeeRo
     }
   }
 
+  function clearFilters() {
+    setSearch("");
+    setStatusFilter("all");
+    setCurrentPage(1);
+  }
+
+  // ✅ ฟังก์ชันกรองข้อมูล
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const keyword = search.toLowerCase().trim();
+      const num = visaNumber(emp).toLowerCase();
+      const matchSearch =
+        !keyword ||
+        (emp.employeeName || "").toLowerCase().includes(keyword) ||
+        (emp.emp_code || "").toLowerCase().includes(keyword) ||
+        num.includes(keyword);
+
+      const statusObj = statusFor(emp.visa_expiry_date);
+      let matchStatus = true;
+
+      if (statusFilter === "overdue") matchStatus = statusObj.label === "เกินกำหนด";
+      if (statusFilter === "urgent") matchStatus = statusObj.label === "ด่วนมาก";
+      if (statusFilter === "expiring_soon") matchStatus = statusObj.label === "ใกล้หมดอายุ";
+      if (statusFilter === "normal") matchStatus = statusObj.label === "ปกติ";
+      if (statusFilter === "no_data") matchStatus = statusObj.label === "ยังไม่มีข้อมูล";
+
+      return matchSearch && matchStatus;
+    });
+  }, [employees, search, statusFilter]);
+
+  // ✅ คำนวณข้อมูลสำหรับ Pagination
+  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE) || 1;
+  const paginatedEmployees = filteredEmployees.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE, 
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 bg-white px-5 py-4">
-          <h3 className="text-sm font-bold text-slate-800">รายการที่ต้องดำเนินการ</h3>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+        
+        {/* ✅ กล่องค้นหาและตัวกรองข้อมูล */}
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+             <span className="w-2 h-6 bg-blue-600 rounded-full inline-block"></span> 
+             รายการที่ต้องดำเนินการ
+          </h3>
+          
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] items-end">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-2">ค้นหาพนักงาน (ชื่อ, รหัส, เลขวีซ่า)</label>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="พิมพ์ค้นหา..."
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-2">กรองตามสถานะ</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+              >
+                <option value="all">-- แสดงทั้งหมด --</option>
+                <option value="overdue">เกินกำหนด (เลยกำหนดต่อวีซ่า)</option>
+                <option value="urgent">ด่วนมาก (ภายใน 7 วัน)</option>
+                <option value="expiring_soon">ใกล้หมดอายุ (ภายใน 30 วัน)</option>
+                <option value="normal">ปกติ (เหลือมากกว่า 30 วัน)</option>
+                <option value="no_data">ยังไม่มีข้อมูล</option>
+              </select>
+            </div>
+            <div className="flex">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-300 transition text-center flex items-center justify-center w-full sm:w-auto"
+              >
+                ล้างตัวกรอง
+              </button>
+            </div>
+          </div>
         </div>
-        {error && <div className="m-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</div>}
-        {success && <div className="m-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{success}</div>}
-        <div className="overflow-x-auto">
-          <table className="min-w-[1100px] w-full border-collapse">
-            <thead className="bg-slate-50">
+
+        {error && <div className="m-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
+        {success && <div className="m-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-700">{success}</div>}
+        
+        <div className="overflow-x-auto custom-scrollbar flex-1">
+          <table className="w-full text-left text-sm whitespace-nowrap min-w-[1080px]">
+            <thead className="bg-slate-50/80 text-gray-500 border-b border-gray-100 uppercase tracking-wider text-[11px] md:text-xs">
               <tr>
-                <th className="min-w-[200px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">ชื่อ-นามสกุล</th>
-                <th className="min-w-[140px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">รหัสพนักงาน</th>
-                <th className="min-w-[140px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">เลขวีซ่า</th>
-                <th className="min-w-[130px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">วันหมดอายุ</th>
-                <th className="min-w-[120px] px-5 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">เวลาที่เหลือ</th>
-                <th className="min-w-[130px] px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">สถานะ</th>
-                <th className="min-w-[120px] px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">ไฟล์</th>
-                <th className="min-w-[150px] px-5 py-4 text-center text-xs font-bold uppercase tracking-wide text-slate-500 whitespace-nowrap">ดำเนินการ</th>
+                <th className="p-4 pl-6 font-bold">ชื่อ-นามสกุล</th>
+                <th className="p-4 font-bold">รหัสพนักงาน</th>
+                <th className="p-4 font-bold">เลขวีซ่า</th>
+                <th className="p-4 font-bold text-center">วันหมดอายุ</th>
+                <th className="p-4 font-bold text-center">เวลาที่เหลือ</th>
+                <th className="p-4 font-bold text-center">สถานะ</th>
+                <th className="p-4 font-bold text-center">ไฟล์</th>
+                <th className="p-4 font-bold text-center pr-6">ดำเนินการ</th>
               </tr>
             </thead>
-            <tbody>
-              {employees.map((employee) => {
+            <tbody className="divide-y divide-gray-50">
+              {paginatedEmployees.map((employee) => {
                 const status = statusFor(employee.visa_expiry_date);
                 const number = visaNumber(employee);
-                const expiryDate = formatThaiDate(employee.visa_expiry_date);
                 return (
-                  <tr key={employee.id} className="border-t border-slate-100 transition-colors hover:bg-slate-50/70">
-                    <td className="px-5 py-4 align-middle text-sm text-slate-700">
-                      <div className="min-w-[180px]">
-                        <p className="font-bold text-slate-900">{employee.employeeName || "ไม่ระบุชื่อ"}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">Profile #{employee.id}</p>
-                      </div>
+                  <tr key={employee.id} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="p-4 pl-6 font-bold text-gray-800">{employee.employeeName}</td>
+                    <td className="p-4 font-bold text-blue-700">{employee.emp_code || "-"}</td>
+                    <td className="p-4 font-medium text-gray-600">{number || "-"}</td>
+                    <td className="p-4 text-center font-medium text-gray-600">{formatThaiDate(employee.visa_expiry_date)}</td>
+                    <td className="p-4 text-center font-bold text-gray-800">{status.daysText}</td>
+                    <td className="p-4 text-center">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${status.color}`}>
+                        {status.label}
+                      </span>
                     </td>
-                    <td className="px-5 py-4 align-middle text-sm text-slate-700">
-                      {employee.emp_code ? (
-                        <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-600 whitespace-nowrap">
-                          {employee.emp_code}
-                        </span>
-                      ) : missing}
-                    </td>
-                    <td className="px-5 py-4 align-middle font-mono text-sm text-slate-600">{number || missing}</td>
-                    <td className="px-5 py-4 align-middle font-mono text-sm text-slate-600 whitespace-nowrap">{expiryDate || missing}</td>
-                    <td className="px-5 py-4 align-middle text-sm font-bold text-slate-700 whitespace-nowrap">{status.daysText || missing}</td>
-                    <td className="px-5 py-4 text-center align-middle">
-                      <span className={status.className}>{status.label}</span>
-                    </td>
-                    <td className="px-5 py-4 text-center align-middle">
+                    <td className="p-4 text-center">
                       {employee.has_visa_file ? (
-                        <SecureDocumentButton
-                          employeeId={employee.id}
-                          documentType="visa"
-                          className="inline-flex min-w-[92px] items-center justify-center rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100 transition hover:bg-blue-100"
-                        >
+                        <SecureDocumentButton employeeId={employee.id} documentType="visa" className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-bold text-blue-600 shadow-sm transition-all hover:bg-blue-600 hover:text-white">
                           เปิดดูไฟล์
                         </SecureDocumentButton>
                       ) : (
-                        <span className="inline-flex min-w-[92px] items-center justify-center whitespace-nowrap rounded-lg bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400">
-                          ยังไม่มีไฟล์
-                        </span>
+                        <span className="inline-flex px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-[11px] font-bold text-gray-400">ยังไม่มีไฟล์</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-center align-middle">
+                    <td className="p-4 text-center pr-6">
                       <button
                         type="button"
                         onClick={() => {
@@ -166,7 +239,7 @@ export default function VisaRenewalClient({ employees }: { employees: EmployeeRo
                           setSuccess("");
                           setActiveEmployee(employee);
                         }}
-                        className="inline-flex min-w-[124px] items-center justify-center whitespace-nowrap rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex min-w-[140px] items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition hover:bg-blue-700"
                       >
                         ต่อวีซ่า
                       </button>
@@ -174,90 +247,203 @@ export default function VisaRenewalClient({ employees }: { employees: EmployeeRo
                   </tr>
                 );
               })}
-              {employees.length === 0 && (
+              {paginatedEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="border-t border-slate-100">
-                    <div className="py-16 text-center">
-                      <p className="text-sm font-semibold text-slate-500">ไม่มีรายการพนักงาน</p>
-                      <p className="mt-1 text-xs text-slate-400">ยังไม่มีข้อมูลสำหรับดำเนินการต่อวีซ่า</p>
-                    </div>
-                  </td>
+                  <td colSpan={8} className="p-10 text-center text-gray-400 font-medium">ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* ✅ Pagination Footer */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-sm font-medium text-gray-500">
+              แสดง {(currentPage - 1) * ITEMS_PER_PAGE + 1} ถึง {Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)} จากทั้งหมด {filteredEmployees.length} รายการ
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                &laquo; ก่อนหน้า
+              </button>
+              
+              <div className="flex items-center gap-1 hidden sm:flex">
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const pageNum = idx + 1;
+                  if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1.5 rounded-lg border text-sm font-bold shadow-sm transition-colors ${currentPage === pageNum ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+                  if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="px-2 text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                ถัดไป &raquo;
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* ✅ ปรับปรุงหน้าต่าง Popup Modal ใหม่ */}
       {activeEmployee && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
-          <form
-            role="dialog"
-            aria-modal="true"
-            aria-label="ต่อวีซ่า"
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
-            onSubmit={(event) => {
-              event.preventDefault();
-              submit(new FormData(event.currentTarget));
-            }}
-          >
-            <div className="mb-5 flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Visa Renewal</p>
-                <h2 className="mt-1 text-xl font-black text-slate-900">บันทึกการต่อวีซ่า</h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Header Modal */}
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-blue-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-md">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-extrabold text-[#111c44]">บันทึกการต่อวีซ่า</h2>
+                  <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wide">Visa Renewal</p>
+                </div>
               </div>
-              {activeEmployee.has_visa_file && (
-                <SecureDocumentButton
-                  employeeId={activeEmployee.id}
-                  documentType="visa"
-                  className="inline-flex min-w-[92px] items-center justify-center rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 ring-1 ring-inset ring-blue-100 transition hover:bg-blue-100"
+              <button 
+                type="button"
+                onClick={() => !submitting && setActiveEmployee(null)} 
+                className="text-gray-400 hover:text-red-500 transition-colors p-2 bg-white hover:bg-red-50 rounded-lg shadow-sm border border-gray-100"
+              >
+                ✖
+              </button>
+            </div>
+
+            <form
+              className="flex flex-col overflow-hidden"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submit(new FormData(event.currentTarget));
+              }}
+            >
+              {/* Body Modal (เลื่อนได้) */}
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                
+                {/* ข้อมูลเดิมพนักงาน (ออกแบบเป็น Card) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50/80 p-5 rounded-2xl border border-gray-100">
+                  <div>
+                    <p className="text-[11px] font-bold text-gray-500 mb-1">พนักงาน</p>
+                    <p className="font-bold text-sm text-gray-900">{activeEmployee.employeeName}</p>
+                    <p className="text-xs text-blue-600 font-bold mt-0.5">{activeEmployee.emp_code || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-gray-500 mb-1">ข้อมูลวีซ่าเดิม</p>
+                    <p className="font-bold text-sm text-gray-800">
+                      เลขเดิม: <span className="font-medium text-gray-600">{visaNumber(activeEmployee) || "-"}</span>
+                    </p>
+                    <p className="font-bold text-sm text-gray-800 mt-0.5">
+                      วันเดิม: <span className="font-medium text-red-500">{formatThaiDate(activeEmployee.visa_expiry_date)}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Form Inputs */}
+                <input type="hidden" name="employeeId" value={activeEmployee.id} />
+                <input type="hidden" name="documentType" value="visa" />
+                
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">เลขวีซ่าใหม่ <span className="text-red-500">*</span></label>
+                    <input 
+                      name="documentNumber" 
+                      defaultValue={visaNumber(activeEmployee)} 
+                      required
+                      placeholder="ระบุเลขที่วีซ่า..."
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">วันหมดอายุใหม่ <span className="text-red-500">*</span></label>
+                    <input 
+                      type="date" 
+                      name="expiryDate" 
+                      required 
+                      defaultValue={toInputDate(activeEmployee.visa_expiry_date)} 
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">ไฟล์ Visa ใหม่ (ถ้ามี)</label>
+                    <input 
+                      type="file" 
+                      name="visa_document" 
+                      accept=".pdf,.png,.jpg,.jpeg,.webp" 
+                      className="w-full bg-white border border-gray-200 rounded-xl text-sm shadow-sm
+                        file:mr-4 file:py-3 file:px-4 file:rounded-l-xl file:border-0 
+                        file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 
+                        hover:file:bg-blue-100 transition-all cursor-pointer" 
+                    />
+                    {activeEmployee.has_visa_file && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">ไฟล์เดิมในระบบ:</span>
+                        <SecureDocumentButton employeeId={activeEmployee.id} documentType="visa" className="px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-[11px] font-bold hover:bg-gray-200 transition-colors">
+                          เปิดดูไฟล์เดิม
+                        </SecureDocumentButton>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-2">หมายเหตุเพิ่มเติม</label>
+                    <textarea 
+                      name="note" 
+                      placeholder="ระบุหมายเหตุการต่อวีซ่า..."
+                      className="min-h-[100px] w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm resize-y custom-scrollbar" 
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer Modal */}
+              <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  disabled={submitting} 
+                  onClick={() => setActiveEmployee(null)} 
+                  className="px-6 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-700 text-sm font-bold shadow-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
                 >
-                  ดูไฟล์เดิม
-                </SecureDocumentButton>
-              )}
-            </div>
-
-            <div className="mb-5 grid gap-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600 sm:grid-cols-2">
-              <p><span className="font-bold text-slate-800">พนักงาน:</span> {activeEmployee.employeeName}</p>
-              <p><span className="font-bold text-slate-800">รหัส:</span> {activeEmployee.emp_code || "-"}</p>
-              <p><span className="font-bold text-slate-800">เลขเดิม:</span> {visaNumber(activeEmployee) || "-"}</p>
-              <p><span className="font-bold text-slate-800">วันเดิม:</span> {formatThaiDate(activeEmployee.visa_expiry_date) || "-"}</p>
-              <p><span className="font-bold text-slate-800">สถานะเดิม:</span> {statusFor(activeEmployee.visa_expiry_date).label}</p>
-            </div>
-
-            <input type="hidden" name="employeeId" value={activeEmployee.id} />
-            <input type="hidden" name="documentType" value="visa" />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-bold text-slate-700">เลขวีซ่าใหม่</span>
-                <input name="documentNumber" defaultValue={visaNumber(activeEmployee)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-bold text-slate-700">วันหมดอายุใหม่</span>
-                <input type="date" name="expiryDate" required defaultValue={toInputDate(activeEmployee.visa_expiry_date)} className="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-              </label>
-            </div>
-
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-bold text-slate-700">ไฟล์ Visa ใหม่</span>
-              <input type="file" name="visa_document" accept=".pdf,.png,.jpg,.jpeg,.webp" className="h-11 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            </label>
-
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-bold text-slate-700">หมายเหตุ</span>
-              <textarea name="note" className="min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
-            </label>
-
-            <div className="mt-6 flex flex-col-reverse items-stretch justify-end gap-3 sm:flex-row sm:items-center">
-              <button type="button" disabled={submitting} onClick={() => setActiveEmployee(null)} className="rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:opacity-50">
-                ยกเลิก
-              </button>
-              <button type="submit" disabled={submitting} className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50">
-                {submitting ? "กำลังบันทึก..." : "บันทึกการต่อวีซ่า"}
-              </button>
-            </div>
-          </form>
+                  ยกเลิก
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting} 
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold shadow-md shadow-blue-500/20 hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                      กำลังบันทึก...
+                    </span>
+                  ) : "บันทึกการต่อวีซ่า"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </>

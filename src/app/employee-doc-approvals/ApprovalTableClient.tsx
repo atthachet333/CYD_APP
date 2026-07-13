@@ -64,17 +64,26 @@ function formatDate(value: string) {
 export default function ApprovalTableClient() {
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [summary, setSummary] = useState<Summary>({ all: 0, pending: 0, approvedThisMonth: 0, rejected: 0 });
+  
   const [activeStatus, setActiveStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [docType, setDocType] = useState(""); 
+  
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  
   const [approveTarget, setApproveTarget] = useState<ApprovalItem | null>(null);
   const [rejectTarget, setRejectTarget] = useState<ApprovalItem | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [reviseTarget, setReviseTarget] = useState<ApprovalItem | null>(null);
   const [reviseStatus, setReviseStatus] = useState("pending");
   const [reviseReason, setReviseReason] = useState("");
+  
+  // ✅ State สำหรับ Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
+
   const hasOpenModal = Boolean(approveTarget || rejectTarget || reviseTarget);
 
   useEffect(() => {
@@ -100,6 +109,7 @@ export default function ApprovalTableClient() {
     const params = new URLSearchParams();
     if (activeStatus !== "all") params.set("status", activeStatus);
     if (search.trim()) params.set("search", search.trim());
+    if (docType) params.set("docType", docType);
 
     try {
       const res = await fetch(`/api/document-approvals?${params.toString()}`, { cache: "no-store" });
@@ -107,6 +117,7 @@ export default function ApprovalTableClient() {
       if (!res.ok || !data?.ok) throw new Error(data?.error || "โหลดข้อมูลไม่สำเร็จ");
       setItems(data.items || []);
       setSummary(data.summary || { all: 0, pending: 0, approvedThisMonth: 0, rejected: 0 });
+      setCurrentPage(1); // รีเซ็ตไปหน้าที่ 1 หลังโหลดข้อมูลใหม่
     } catch (err: any) {
       setError(err?.message || "โหลดข้อมูลไม่สำเร็จ");
     } finally {
@@ -117,7 +128,7 @@ export default function ApprovalTableClient() {
   useEffect(() => {
     const timer = window.setTimeout(loadData, 250);
     return () => window.clearTimeout(timer);
-  }, [activeStatus, search]);
+  }, [activeStatus, search, docType]);
 
   async function approve(item: ApprovalItem) {
     setSubmittingId(item.id);
@@ -185,12 +196,26 @@ export default function ApprovalTableClient() {
     setReviseReason("");
   }
 
+  function clearFilters() {
+    setSearch("");
+    setDocType("");
+    setActiveStatus("all");
+    setCurrentPage(1);
+  }
+
   const tabs = useMemo(() => [
     { key: "all", label: `คำขอทั้งหมด (${summary.all})` },
     { key: "pending", label: `รอตรวจสอบ (${summary.pending})` },
     { key: "approved", label: "อนุมัติแล้ว" },
     { key: "rejected", label: `ถูกปฏิเสธ (${summary.rejected})` },
   ], [summary]);
+
+  // ✅ คำนวณข้อมูลสำหรับ Pagination
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE) || 1;
+  const paginatedItems = items.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE, 
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="space-y-6">
@@ -209,9 +234,10 @@ export default function ApprovalTableClient() {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex flex-col items-stretch justify-between gap-4 border-b border-gray-50 bg-gray-50/30 p-4 sm:flex-row sm:items-center sm:p-5">
-          <div className="flex w-full gap-4 overflow-x-auto text-xs font-bold text-gray-400 sm:w-auto md:text-sm">
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+        
+        <div className="flex flex-col gap-4 border-b border-gray-50 bg-gray-50/30 p-4 sm:p-5">
+          <div className="flex w-full gap-4 overflow-x-auto text-xs font-bold text-gray-400 md:text-sm">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -223,18 +249,47 @@ export default function ApprovalTableClient() {
               </button>
             ))}
           </div>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="ค้นหาเลขคำขอ, รหัสพนักงาน, ชื่อ, บริษัท..."
-            className="w-full sm:w-80 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-          />
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_auto] items-end mt-2">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-2">ค้นหาคำขอ (เลขที่, ชื่อ, รหัส)</label>
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="พิมพ์ค้นหา..."
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 mb-2">กรองตามประเภทเอกสาร</label>
+              <select
+                value={docType}
+                onChange={(event) => setDocType(event.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+              >
+                <option value="">-- แสดงทั้งหมด --</option>
+                <option value="passport">Passport (PP)</option>
+                <option value="visa">Visa (VISA)</option>
+                <option value="work_permit">Work Permit (WP)</option>
+                <option value="ninety_day">90 Days Report (90D)</option>
+              </select>
+            </div>
+            <div className="flex">
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="px-6 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-xl text-sm hover:bg-gray-300 transition text-center flex items-center justify-center w-full sm:w-auto"
+              >
+                ล้างตัวกรอง
+              </button>
+            </div>
+          </div>
         </div>
 
         {error && <div className="m-4 break-words rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 sm:m-5">{error}</div>}
 
-        <div className="overflow-x-auto custom-scrollbar">
+        <div className="overflow-x-auto custom-scrollbar flex-1">
           <table className="w-full text-left text-sm whitespace-nowrap min-w-[1120px]">
             <thead>
               <tr className="bg-slate-50/80 text-gray-500 border-b border-gray-100 uppercase tracking-wider text-[11px] md:text-xs font-bold">
@@ -252,9 +307,9 @@ export default function ApprovalTableClient() {
             <tbody className="divide-y divide-gray-50 text-xs md:text-sm font-medium text-gray-700">
               {loading ? (
                 <tr><td colSpan={9} className="p-8 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
-              ) : items.length === 0 ? (
-                <tr><td colSpan={9} className="p-8 text-center text-gray-400">ไม่มีข้อมูลคำขอรออนุมัติ</td></tr>
-              ) : items.map((item) => (
+              ) : paginatedItems.length === 0 ? (
+                <tr><td colSpan={9} className="p-8 text-center text-gray-400">ไม่มีข้อมูลคำขอที่ตรงกับเงื่อนไข</td></tr>
+              ) : paginatedItems.map((item) => (
                 <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                   <td className="p-4 pl-6 font-bold text-blue-700">{item.requestNumber}</td>
                   <td className="p-4">
@@ -329,8 +384,56 @@ export default function ApprovalTableClient() {
             </tbody>
           </table>
         </div>
+
+        {/* ✅ Pagination Footer */}
+        {totalPages > 1 && !loading && (
+          <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-sm font-medium text-gray-500">
+              แสดง {(currentPage - 1) * ITEMS_PER_PAGE + 1} ถึง {Math.min(currentPage * ITEMS_PER_PAGE, items.length)} จากทั้งหมด {items.length} รายการ
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                &laquo; ก่อนหน้า
+              </button>
+              
+              <div className="flex items-center gap-1 hidden sm:flex">
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const pageNum = idx + 1;
+                  if (pageNum === 1 || pageNum === totalPages || (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)) {
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1.5 rounded-lg border text-sm font-bold shadow-sm transition-colors ${currentPage === pageNum ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  }
+                  if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="px-2 text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
+              >
+                ถัดไป &raquo;
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* POPUP โมดอลทั้งหมดอยู่ด้านล่างนี้ */}
       {rejectTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 p-4">
           <div role="dialog" aria-modal="true" aria-label="ยืนยันการปฏิเสธ" className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6">
