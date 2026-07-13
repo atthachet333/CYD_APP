@@ -181,7 +181,7 @@ export default function SpxRegistrationSection({
               {/* 🟢 ส่วนอัปโหลดไฟล์ 4 ช่องแยกอิสระ (เฉพาะ SPX) */}
               <div className="space-y-4 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-6">
                 <h4 className="font-bold text-gray-800 text-base">
-                  อัปโหลดเอกสารพนักงาน <span className="text-red-500 text-sm font-normal">(เฉพาะสาขา SPX)</span>
+                  อัปโหลดเอกสารพนักงาน <span className="text-red-500 text-sm font-normal">(เฉพาะสาขา Soce Soce Socw fsocw)</span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
