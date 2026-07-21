@@ -1,10 +1,11 @@
-﻿// src/app/employees/create/page.tsx
+// src/app/employees/create/page.tsx
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import ApiActionForm from "./ApiActionForm";
 import SecureDocumentButton from "@/components/SecureDocumentButton";
 import RouteModalEffects from "@/components/RouteModalEffects";
+import CompanySelector from "./CompanySelector";
 
 function documentHref(documentFileName: string) {
   const filename = documentFileName.split(/[\\/]/).pop() || "";
@@ -38,22 +39,6 @@ const getWorkTypeName = (id: number | null) => {
   if (id === 4) return "มติ ครม. 24 ก.ย. 67";
   return "ไม่ระบุ";
 };
-
-const COMPANY_LIST = [
-  "บริษัท SYAQUA SIAM COMPANY LIMITED",
-  "บริษัท วิพล พาราไดซ์ จำกัด",
-  "บริษัท เอเวียนท์ (ประเทศไทย) จำกัด",
-  "บริษัท ไคเมท เทคโนโลยี ดีเวลลอปเม้นท์ จำกัด",
-  "บริษัท ไดนามิครีไซเคิล จำกัด",
-  "บริษัท แม่น้ำสแตนเลสไวร์ จำกัด (มหาชน)",
-  "บริษัท อีท แอม อา กรุ๊ป จำกัด",
-  "บริษัท เอ็ม แอนด์ เอช 2023 (ประเทศไทย) จำกัด",
-  "บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด (FSOCW-สมุทรสาคร)",
-  "บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด (HUB)",
-  "บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด (SOCE-บัวโรย)",
-  "บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด (SOCN-วังน้อย)",
-  "บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด (SOCW-สมุทรสาคร)",
-];
 
 export default async function CreateEmployeePage({ searchParams }: PageProps) {
   const debugStart = Date.now();
@@ -173,15 +158,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
               </div>
             </div>
 
-            <div>
-              <label className="block font-bold text-gray-700 mb-1.5">บริษัท <span className="text-red-500">*</span></label>
-              <select name="company_name_val" required className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50 focus:bg-white transition-colors">
-                <option value="">-- เลือกบริษัท --</option>
-                {COMPANY_LIST.map((cName, idx) => (
-                  <option key={idx} value={cName}>{cName}</option>
-                ))}
-              </select>
-            </div>
+            <CompanySelector companies={companies.map(c => c.company_name)} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
