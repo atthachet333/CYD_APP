@@ -73,7 +73,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
   const moveId = resolvedParams?.moveId;
   const deleteId = resolvedParams?.deleteId;
   const deleteCompanyId = resolvedParams?.deleteCompanyId;
-  const viewId = resolvedParams?.viewId; // ✅ รับพารามิเตอร์เพื่อเปิด Popup ดูข้อมูล
+  const viewId = resolvedParams?.viewId; 
 
   const companies = await prisma.companies.findMany({
     orderBy: { company_name: "asc" },
@@ -116,7 +116,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
   const activeDocEmp = docId ? allEmployees.find((e) => e.id.toString() === docId) : null;
   const activeMoveEmp = moveId ? allEmployees.find((e) => e.id.toString() === moveId) : null;
   const activeDeleteEmp = deleteId ? allEmployees.find((e) => e.id.toString() === deleteId) : null;
-  const viewEmployee = viewId ? allEmployees.find((e) => e.id.toString() === viewId) : null; // ✅ ตัวแปรเปิด Popup
+  const viewEmployee = viewId ? allEmployees.find((e) => e.id.toString() === viewId) : null; 
 
   const activeDeleteCompany = deleteCompanyId
     ? companySummaries.find((c) => c.id.toString() === deleteCompanyId)
@@ -183,7 +183,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div>
                 <label className="block font-bold text-gray-700 mb-1.5">ยอดค้างชำระ (บาท)</label>
                 <input type="number" step="0.01" name="debt_amount" defaultValue="0.00" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-50/50 focus:bg-white transition-colors" />
@@ -198,9 +198,17 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                   <option value="4">มติ ครม. 24 ก.ย. 67</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">สิทธิรักษาสุขภาพ</label>
+                <select name="healthcare_rights" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-gray-700" required>
+                  <option value="ประกันสังคม">ประกันสังคม</option>
+                  <option value="ใบประกันสุขภาพ">ใบประกันสุขภาพ</option>
+                  <option value="ไม่มี">ไม่มี</option>
+                </select>
+              </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-sm mb-6">
+            <div className="bg-white p-6 rounded-2xl border border-blue-200 shadow-sm mb-6 mt-6">
               <h3 className="font-bold text-gray-800 text-lg mb-4">อัปโหลดเอกสารประจำตัวพนักงาน</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
@@ -218,6 +226,15 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
                   <label className="block text-sm font-bold text-gray-700 mb-2">รายงานตัว 90 วัน (90D)</label>
                   <input type="file" name="ninety_day_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                </div>
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">ใบเก็บอัตลักษณ์</label>
+                  <input type="file" name="identity_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
+                </div>
+                {/* ✅ เพิ่มช่องอัปโหลด โปรไฟล์พนักงาน */}
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:border-blue-400 transition-colors">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">โปรไฟล์พนักงาน</label>
+                  <input type="file" name="profile_document" accept=".pdf,image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 cursor-pointer bg-white border border-gray-200 p-2" />
                 </div>
               </div>
             </div>
@@ -249,6 +266,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">วันหมดอายุใบอนุญาตทำงาน</label>
                   <input type="date" name="work_permit_expiry_date" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-gray-600" />
                 </div>
+                {/* ✅ เอาช่องกรอกเลขที่ใบเก็บอัตลักษณ์ออก และให้ช่อง 90 วันใช้พื้นที่ 2 คอลัมน์เต็มเหมือนเดิม */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">วันรายงานตัว 90 วันล่าสุด</label>
                   <input type="date" name="ninety_day_report_date" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-gray-600" />
@@ -296,14 +314,15 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                 <div className="p-0 bg-white border-t border-gray-100 text-sm">
                   {comp.count > 0 ? (
                     <div className="overflow-x-auto custom-scrollbar">
-                      <table className="w-full text-left text-xs whitespace-nowrap min-w-[1100px]">
+                      <table className="w-full text-left text-xs whitespace-nowrap min-w-[1200px]">
                         <thead className="bg-gray-50/80 text-gray-500 border-b border-gray-100 uppercase tracking-wider">
                           <tr>
                             <th className="p-4 pl-6 font-bold">รหัสพนักงาน</th>
                             <th className="p-4 font-bold">ชื่อ-นามสกุล</th>
                             <th className="p-4 font-bold text-center">ประเภทเวิร์ค</th>
+                            {/* ✅ เพิ่มคอลัมน์ สิทธิรักษาสุขภาพ */}
+                            <th className="p-4 font-bold text-center">สิทธิรักษาสุขภาพ</th>
                             <th className="p-4 font-bold text-center">เอกสารที่มี</th>
-                            {/* ✅ ซิงค์คอลัมน์เหมือนหน้า page.tsx */}
                             <th className="p-4 font-bold text-center">ดูข้อมูล</th>
                             <th className="p-4 font-bold text-center">สถานะ</th>
                             <th className="p-4 pr-6 font-bold text-center">จัดการ</th>
@@ -322,6 +341,12 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                                   {getWorkTypeName(emp.work_type_id)}
                                 </span>
                               </td>
+                              {/* ✅ ข้อมูลสิทธิรักษาสุขภาพ */}
+                              <td className="p-4 text-center">
+                                <span className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border shadow-sm ${emp.healthcare_rights && emp.healthcare_rights !== 'ไม่มี' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                                  {emp.healthcare_rights && emp.healthcare_rights !== 'ไม่มี' ? emp.healthcare_rights : 'ไม่มี'}
+                                </span>
+                              </td>
                               <td className="p-4 text-center">
                                 <div className="flex items-center justify-center gap-1.5">
                                   <span className={`px-2 py-1 rounded text-[10px] font-bold border shadow-sm ${emp.passport_number ? 'bg-green-50 text-green-600 border-green-200' : 'bg-red-50 text-red-500 border-red-200'}`}>PP</span>
@@ -330,7 +355,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                                 </div>
                               </td>
 
-                              {/* ✅ คอลัมน์ ดูข้อมูล */}
                               <td className="p-4 text-center">
                                 <Link href={`/employees/create?viewId=${emp.id}`} scroll={false} className="inline-flex items-center justify-center p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" title="รายละเอียด">
                                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,15 +364,12 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                                 </Link>
                               </td>
 
-                              {/* ✅ คอลัมน์ สถานะ */}
                               <td className="p-4 text-center">
-                                {/* 💡 Backend Note: เปลี่ยน href ให้ชี้ไปหน้า "ต่อเอกสาร" ได้เลย เช่น href={`/renew-docs/${emp.id}`} */}
                                 <Link href={`#`} className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-orange-50 text-orange-600 border border-orange-200 shadow-sm hover:bg-orange-500 hover:text-white transition-all whitespace-nowrap">
                                   รอต่อเอกสาร
                                 </Link>
                               </td>
 
-                              {/* ✅ คอลัมน์ จัดการ */}
                               <td className="p-4 pr-6 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                   {canViewDocs ? (
@@ -380,7 +401,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
       {/* ===================== POPUPS ===================== */}
 
-      {/* POPUP: ดูข้อมูลพนักงาน (เพิ่ม Backend Note การดึงวันหมดอายุให้ครบ) */}
+      {/* POPUP: ดูข้อมูลพนักงาน */}
       {viewEmployee && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
           <div role="dialog" aria-modal="true" aria-label="ข้อมูลพนักงาน" className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
@@ -412,7 +433,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                 <div><p className="text-xs font-bold text-gray-500 mb-1">ชื่อ-นามสกุล (EN)</p><p className="font-bold text-lg text-gray-800 uppercase">{viewEmployee.first_name_en} {viewEmployee.last_name_en}</p></div>
               </div>
 
-              {/* 🟢 ส่วนแสดงวันหมดอายุเอกสาร (Backend Note) */}
               <div className="mt-6 border-t border-gray-100 pt-6">
                 <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> วันหมดอายุเอกสาร (Expiration Dates)
@@ -421,7 +441,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
                     <p className="text-[11px] font-bold text-orange-600 mb-1 uppercase tracking-wide">Passport</p>
-                    {/* 💡 Backend Note: เปลี่ยน passport_expire_date ให้ตรงกับ DB Schema */}
                     <p className="font-bold text-sm text-gray-800">
                       {formatThaiDate(viewEmployee.passport_expiry_date)}
                     </p>
@@ -429,7 +448,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
                   <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
                     <p className="text-[11px] font-bold text-purple-600 mb-1 uppercase tracking-wide">Visa</p>
-                    {/* 💡 Backend Note: เปลี่ยน visa_expire_date ให้ตรงกับ DB Schema */}
                     <p className="font-bold text-sm text-gray-800">
                       {formatThaiDate(viewEmployee.visa_expiry_date)}
                     </p>
@@ -437,7 +455,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
                   <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
                     <p className="text-[11px] font-bold text-emerald-600 mb-1 uppercase tracking-wide">Work Permit</p>
-                    {/* 💡 Backend Note: เปลี่ยน work_permit_expire_date ให้ตรงกับ DB Schema */}
                     <p className="font-bold text-sm text-gray-800">
                       {formatThaiDate(viewEmployee.work_permit_expiry_date)}
                     </p>
@@ -445,7 +462,6 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
 
                   <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
                     <p className="text-[11px] font-bold text-pink-600 mb-1 uppercase tracking-wide">90 Days</p>
-                    {/* 💡 Backend Note: เปลี่ยน ninety_days_expire_date ให้ตรงกับ DB Schema */}
                     <p className="font-bold text-sm text-gray-800">
                       {formatThaiDate(viewEmployee.ninety_day_report_date || viewEmployee.report_90_days_date)}
                     </p>
@@ -464,7 +480,7 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
         </div>
       )}
 
-      {/* 🟢 Popup แจ้งเตือนการลบบริษัท */}
+      {/* Popup แจ้งเตือนการลบบริษัท */}
       {activeDeleteCompany && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
           <div role="dialog" aria-modal="true" aria-label="จัดการบริษัท" className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-[2rem] bg-white p-8 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
@@ -503,67 +519,144 @@ export default async function CreateEmployeePage({ searchParams }: PageProps) {
         </div>
       )}
 
-      {/* POPUP: ดูเอกสาร 4 ปุ่ม */}
+      {/* POPUP: ดูเอกสาร 6 รูปแบบใหม่ */}
       {activeDocEmp && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">
-          <div role="dialog" aria-modal="true" aria-label="เอกสารแนบพนักงาน" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-purple-50">
-              <h2 className="text-lg font-bold text-purple-800">เอกสารแนบของ {activeDocEmp.first_name_th}</h2>
-              <Link href="/employees/create" className="text-gray-400 hover:text-red-500 transition-colors">✖</Link>
+          <div role="dialog" aria-modal="true" aria-label="เอกสารแนบพนักงาน" className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="p-5 border-b border-purple-100 bg-[#fdfaff] flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#5b21b6] rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <h2 className="text-xl font-black text-[#4c1d95]">เอกสารแนบของ {activeDocEmp.first_name_th}</h2>
+              </div>
+              <Link scroll={false} href="/employees/create" className="flex items-center justify-center w-8 h-8 bg-white border border-gray-200 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shadow-sm">
+                ✖
+              </Link>
             </div>
             
-            <div className="overflow-y-auto p-4 sm:p-6">
-              {activeDocEmp.document_file_name && (
-                <div className="mb-4 flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-bold text-gray-800">Main Document</p>
-                    <p className="mt-1 break-all text-xs text-gray-500" title={activeDocEmp.document_file_name}>{activeDocEmp.document_file_name}</p>
-                  </div>
-                  <SecureDocumentButton viewUrl={documentHref(activeDocEmp.document_file_name)} className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
-                </div>
-              )}
+            {/* Body */}
+            <div className="overflow-y-auto p-6 bg-white custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-bold text-gray-800">Passport (PP)</p>
-                    <p className="text-xs text-gray-500 mt-1">หนังสือเดินทาง</p>
+                
+                {/* 1. ใบเก็บอัตลักษณ์ */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px]">1. ใบเก็บอัตลักษณ์</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">เอกสารเก็บอัตลักษณ์พนักงาน</p>
                   </div>
-                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="passport" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
+                  {(activeDocEmp as any).identity_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType={"identity" as any} className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-bold text-gray-800">Visa (VS)</p>
-                    <p className="text-xs text-gray-500 mt-1">วีซ่า</p>
+                {/* 2. รูปถ่ายพนักงาน */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px]">2. รูปถ่ายพนักงาน</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">รูปถ่ายหน้าตรง</p>
                   </div>
-                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="visa" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
+                  {(activeDocEmp as any).profile_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType={"profile" as any} className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-bold text-gray-800">Work Permit</p>
-                    <p className="text-xs text-gray-500 mt-1">ใบอนุญาตทำงาน</p>
+                {/* 3. หนังสือเดินทาง (Passport) */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px] leading-tight">3. หนังสือเดินทาง<br/>(Passport)</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">สำเนาพาสปอร์ต</p>
                   </div>
-                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="work_permit" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
+                  {activeDocEmp.passport_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType="passport" className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
                 </div>
 
-                <div className="flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-purple-300 sm:flex-row sm:items-center">
-                  <div>
-                    <p className="font-bold text-gray-800">90 Days (90D)</p>
-                    <p className="text-xs text-gray-500 mt-1">รายงานตัว 90 วัน</p>
+                {/* 4. วีซ่า (Visa) */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px]">4. วีซ่า (Visa)</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">สำเนาวีซ่าประจำตัว</p>
                   </div>
-                  <SecureDocumentButton employeeId={activeDocEmp.id} documentType="ninety_day" className="px-4 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-600 hover:text-white transition-colors">เปิดดูไฟล์</SecureDocumentButton>
+                  {activeDocEmp.visa_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType="visa" className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
                 </div>
+
+                {/* 5. ใบอนุญาตทำงาน (Work Permit) */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px] leading-tight">5. ใบอนุญาตทำงาน<br/>(Work Permit)</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">สำเนา Work Permit</p>
+                  </div>
+                  {activeDocEmp.work_permit_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType="work_permit" className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* 6. ใบรายงานตัว 90 วัน */}
+                <div className="flex items-center justify-between p-5 border border-gray-200 rounded-2xl shadow-sm hover:border-purple-300 transition-colors bg-white">
+                  <div className="pr-4">
+                    <p className="font-extrabold text-gray-900 text-[15px]">6. ใบรายงานตัว 90 วัน</p>
+                    <p className="text-[13px] text-gray-500 mt-1 leading-snug">รายงานตัว 90 วันล่าสุด</p>
+                  </div>
+                  {activeDocEmp.ninety_day_file ? (
+                    <SecureDocumentButton employeeId={activeDocEmp.id} documentType="ninety_day" className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-[#f0f4ff] text-[#3b82f6] text-xs font-extrabold rounded-xl hover:bg-blue-600 hover:text-white transition-colors leading-tight px-3 shadow-sm">
+                      <span>เปิดดู</span><span>ไฟล์</span>
+                    </SecureDocumentButton>
+                  ) : (
+                    <span className="min-w-[80px] min-h-[50px] flex flex-col items-center justify-center bg-gray-50 text-gray-400 text-xs font-extrabold rounded-xl border border-gray-100 leading-tight px-3">
+                      <span>ยังไม่มี</span><span>ไฟล์</span>
+                    </span>
+                  )}
+                </div>
+
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-              <Link href="/employees/create" className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-100 shadow-sm transition-colors">ปิดหน้าต่าง</Link>
+            {/* Footer */}
+            <div className="p-5 border-t border-gray-100 bg-[#fdfaff] flex justify-end rounded-b-3xl">
+              <Link scroll={false} href="/employees/create" className="px-8 py-3 bg-white border border-gray-300 text-gray-800 text-sm font-bold rounded-xl hover:bg-gray-50 shadow-sm transition-colors">
+                ปิดหน้าต่าง
+              </Link>
             </div>
+
           </div>
         </div>
       )}
-
+      
       {/* POPUP: ย้ายบริษัท */}
       {activeMoveEmp && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-4">

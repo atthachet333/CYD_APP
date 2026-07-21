@@ -153,6 +153,7 @@ export default function SpxRegistrationSection({
                 <input type="hidden" name="company_id" value={companyId} />
               </div>
 
+              {/* ✅ ปรับเป็น 3 คอลัมน์ */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block font-bold text-gray-700 mb-1.5">ยอดค้างชำระ (บาท)</label>
@@ -178,27 +179,70 @@ export default function SpxRegistrationSection({
                 </div>
               </div>
 
-              {/* 🟢 ส่วนอัปโหลดไฟล์ 4 ช่องแยกอิสระ (เฉพาะ SPX) */}
+              {/* 🟢 ส่วนอัปโหลดไฟล์ 6 ช่อง (UI แบบใหม่) */}
               <div className="space-y-4 rounded-2xl border border-blue-200 bg-blue-50/40 p-4 sm:p-6">
                 <h4 className="font-bold text-gray-800 text-base">
                   อัปโหลดเอกสารพนักงาน <span className="text-red-500 text-sm font-normal">(เฉพาะสาขา Soce Soce Socw fsocw)</span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1.5 text-xs">1. เอกสารพาสปอร์ต (Passport)</label>
-                    <input type="file" name="passport_document" accept=".pdf, image/*" className="w-full text-xs bg-white border border-gray-200 rounded-xl p-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+                  {/* 1. Passport */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">1. หนังสือเดินทาง (Passport - PP)</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="passport_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
                   </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1.5 text-xs">2. เอกสารวีซ่า (Visa)</label>
-                    <input type="file" name="visa_document" accept=".pdf, image/*" className="w-full text-xs bg-white border border-gray-200 rounded-xl p-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+
+                  {/* 2. Visa */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">2. วีซ่า (Visa - VS)</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="visa_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
                   </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1.5 text-xs">3. ใบอนุญาตทำงาน (Work Permit)</label>
-                    <input type="file" name="work_permit_document" accept=".pdf, image/*" className="w-full text-xs bg-white border border-gray-200 rounded-xl p-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+
+                  {/* 3. Work Permit */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">3. ใบอนุญาตทำงาน (Work Permit)</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="work_permit_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
                   </div>
-                  <div>
-                    <label className="block font-bold text-gray-700 mb-1.5 text-xs">4. รายงานตัว 90 วัน (90-Day Report)</label>
-                    <input type="file" name="ninety_day_document" accept=".pdf, image/*" className="w-full text-xs bg-white border border-gray-200 rounded-xl p-2.5 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors" />
+
+                  {/* 4. 90 Days */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">4. รายงานตัว 90 วัน (90D)</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="ninety_day_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
+                  </div>
+
+                  {/* 5. ใบเก็บอัตลักษณ์ */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">5. ใบเก็บอัตลักษณ์</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="identity_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
+                  </div>
+
+                  {/* 6. โปรไฟล์พนักงาน */}
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-blue-400 transition-colors">
+                    <label className="block font-bold text-gray-800 mb-2 text-xs">6. โปรไฟล์พนักงาน</label>
+                    <label className="flex w-full cursor-pointer items-center rounded-xl border border-gray-200 bg-white transition hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/50 overflow-hidden shadow-sm">
+                      <span className="px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold border-r border-gray-200 whitespace-nowrap">เลือกไฟล์</span>
+                      <span className="px-4 py-2.5 text-xs text-gray-500 truncate w-full">ไม่ได้เลือกไฟล์ใด</span>
+                      <input type="file" name="profile_document" accept=".pdf,image/*" className="hidden" onChange={(e) => { e.target.parentElement?.children[1] && (e.target.parentElement.children[1].textContent = e.target.files?.[0]?.name || "ไม่ได้เลือกไฟล์ใด"); }} />
+                    </label>
                   </div>
                 </div>
               </div>
@@ -230,6 +274,8 @@ export default function SpxRegistrationSection({
                     <label className="block text-sm font-bold text-gray-700 mb-1.5">วันหมดอายุใบอนุญาตทำงาน</label>
                     <input type="date" name="work_permit_expiry_date" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-gray-600" />
                   </div>
+                  
+                  {/* ✅ วันรายงานตัว 90 วัน กินพื้นที่ 2 คอลัมน์เต็มตามเดิม */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-bold text-gray-700 mb-1.5">วันรายงานตัว 90 วันล่าสุด</label>
                     <input type="date" name="ninety_day_report_date" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white text-gray-600" />
