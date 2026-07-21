@@ -2,7 +2,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ApiActionForm from "../../create/ApiActionForm";
-import BackButton from "./BackButton"; 
+import BackButton from "./BackButton";
+import CompanySelector from "../../create/CompanySelector";
 
 interface EditPageProps {
   params: Promise<{ id: string }>;
@@ -52,7 +53,7 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
 
         {/* Form Section */}
         <ApiActionForm 
-          endpoint="/api/employee/create" // *ถ้า API อัปเดตข้อมูลของคุณเป็นเส้นอื่น ให้เปลี่ยนตรงนี้นะครับ
+          endpoint="/api/employee/update"
           redirectTo="/employees"
           successMessage="บันทึกการแก้ไขข้อมูลพนักงานสำเร็จ"
         >
@@ -68,29 +69,11 @@ export default async function EditEmployeePage({ params }: EditPageProps) {
                 <span className="w-3 h-3 rounded-full bg-blue-600 shadow-sm"></span> ข้อมูลทั่วไปและสังกัด
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-2">รหัสบริษัท (ถ้ามี)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value={employee.company_id || ""}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 font-medium text-gray-500 cursor-not-allowed"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-2">เลือกบริษัทสังกัด</label>
-                  <select
-                    name="company_id"
-                    defaultValue={employee.company_id || ""}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white font-medium text-gray-700 transition-all outline-none"
-                  >
-                    <option value="">-- เลือกบริษัท --</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.company_name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div className="col-span-1 sm:col-span-2">
+                <CompanySelector 
+                  initialCompanies={companies.map(c => ({ id: c.id, company_name: c.company_name }))} 
+                  defaultCompanyId={employee.company_id || ""}
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
