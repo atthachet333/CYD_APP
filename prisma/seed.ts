@@ -33,12 +33,12 @@ async function main() {
     { role_id: 1, full_name: 'new', username: 'newcyd', email: 'newpanu42@gmail.com', company_id: null },
     { role_id: 1, full_name: 'hnung', username: 'hnungcyd', email: 'hsawinee@gmail.com', company_id: null },
     { role_id: 2, full_name: 'ann', username: 'ancyd', email: 'sutthinan51@gmail.com', company_id: null },
-    { role_id: 2, full_name: 'am', username: 'ang_cyd', email: 'angkanacyd@gmail.com', company_id: null },
     { role_id: 2, full_name: 'am', username: 'amcyd', email: 'amcha88828@gmail.com', company_id: null },
     { role_id: 2, full_name: 'Nk', username: 'nkcyd', email: 'khanittha.n3333@gmail.com', company_id: null },
-    { role_id: 2, full_name: 'am', username: 'angcyd', email: 'angkananuamjoem@gmail.com', company_id: null },
+    { role_id: 2, full_name: 'ang', username: 'angcyd', email: 'angkananuamjoem@gmail.com', company_id: null },
     { role_id: 2, full_name: 'wi', username: 'wicyd', email: 'wicyd@gmail.com', company_id: null },
     { role_id: 2, full_name: 'kim', username: 'kimcyd', email: 'kimcyd@gmail.com', company_id: null },
+    { role_id: 2, full_name: 'sanook', username: 'sanookcyd', email: 'sanookcyd@gmail.com', company_id: null },
     
     // --- ลูกค้า (CUSTOMER) ---
  { role_id: 3, full_name: 'บริษัท SYAQUA SIAM COMPANY LIMITED', username: 'SYAQUA ', email: 'ccvvcaouts@gmail.com', company_id: 18 },
@@ -69,12 +69,13 @@ async function main() {
     // พนักงาน
     if (u.username === "newcyd") plainPassword = "cyd42";
     else if (u.username === "amcyd") plainPassword = "cyd888";
-    else if (u.username === "angcyd" || u.username === "ang_cyd") plainPassword = "1234";
+    else if (u.username === "angcyd") plainPassword = "1234";
     else if (u.username === "nkcyd") plainPassword = "n3333";
     else if (u.username === "ancyd") plainPassword = "cyd51";
     else if (u.username === "hnungcyd") plainPassword = "hnung3";
     else if (u.username === "wicyd") plainPassword = "cyd666";
     else if (u.username === "kimcyd") plainPassword = "cyd777";
+    else if (u.username === "sanookcyd") plainPassword = "1234";
     
     // ลูกค้า
     else if (["SYAQUA ", "amc", "SPXadmin", "SPXadmin01", "SPXadmin02", "SPXadmin03", "SPXadmin04" ,"mswadmin02"].includes(u.username)) {
